@@ -12,7 +12,7 @@ src/framework/            shared, exam-agnostic code (never copied per app)
   components/             React components
     icons.jsx             stroke icon set (Ic)
     Ring.jsx              progress ring
-    IOSFrame.jsx          iOS device bezel + status bar
+    DesktopShell.jsx      responsive shell (mobile-first; desktop side panel)
     Flashcard.jsx         flip + swipe-to-grade card
     Study.jsx             study + quiz sessions
     Home.jsx              home / stats / style screens + bottom nav
@@ -21,7 +21,7 @@ src/framework/            shared, exam-agnostic code (never copied per app)
     spacedRepetition.js   Leitner-style scheduling
     u.js                  aggregates the above into the `U` namespace
   App.jsx                 root state, persistence, routing
-  createApp.jsx           entry factory (mounts App in the frame)
+  createApp.jsx           entry factory (mounts App in the responsive shell)
   styles.css              all component styles
 
 apps/                     one directory per app; the path is the URL path

@@ -45,9 +45,13 @@
   letter-spacing: -0.01em;
 }
 
-/* top safe area for the dynamic island / status bar */
-.aif-top { height: 58px; flex-shrink: 0; }
-.aif-bottom-safe { height: 22px; flex-shrink: 0; }
+/* top safe area — respects the device notch, with a comfortable minimum */
+.aif-top { height: max(env(safe-area-inset-top, 0px), 20px); flex-shrink: 0; }
+.aif-bottom-safe { height: max(env(safe-area-inset-bottom, 0px), 10px); flex-shrink: 0; }
+
+/* one tab's content; keyed remount replays the enter transition on tab change */
+.tab-view { flex: 1; min-height: 0; display: flex; flex-direction: column; animation: tabIn .26s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes tabIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 .aif-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 .aif-scroll::-webkit-scrollbar { display: none; }
@@ -129,9 +133,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   background: rgba(255,255,255,0.82);
   backdrop-filter: blur(18px) saturate(180%); -webkit-backdrop-filter: blur(18px) saturate(180%);
   border-top: 1px solid var(--line);
-  padding: 8px 8px 22px;
+  padding: 8px 8px max(env(safe-area-inset-bottom, 0px), 14px);
 }
-.nav-i { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0 2px; color: var(--ink-3); }
+.nav-i { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0 2px; color: var(--ink-3); transition: color .2s ease; }
 .nav-i.on { color: var(--accent-d); }
 .nav-i span { font-size: 10.5px; font-weight: 650; letter-spacing: -0.01em; }
 .nav-i svg { display: block; }
@@ -139,8 +143,9 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* ============================================================
    STUDY SESSION
    ============================================================ */
-.study { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; z-index: 30; }
-.study-top { height: 58px; flex-shrink: 0; }
+.study { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; z-index: 30; animation: studyIn .3s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes studyIn { from { opacity: 0; transform: translateY(12px) scale(0.99); } to { opacity: 1; transform: none; } }
+.study-top { height: max(env(safe-area-inset-top, 0px), 20px); flex-shrink: 0; }
 .study-bar { display: flex; align-items: center; gap: 14px; padding: 4px 18px 6px; }
 .study-x { width: 40px; height: 40px; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow-soft); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .prog-track { flex: 1; height: 7px; border-radius: 99px; background: var(--line-2); overflow: hidden; }
@@ -307,4 +312,79 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ============================================================
+   RESPONSIVE SHELL
+   Mobile-first: the app column fills the viewport. Wider screens
+   float it on a calm backdrop; desktop adds a branded side panel.
+   ============================================================ */
+.shell-device {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  background: var(--bg);
+  overflow: hidden;
+}
+.shell-aside { display: none; }
+
+/* tablet / small desktop — centre the portrait column on a soft backdrop */
+@media (min-width: 640px) {
+  .shell {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(40px, 6vw, 80px);
+    padding: 40px;
+    box-sizing: border-box;
+    background:
+      radial-gradient(1100px 620px at 100% -8%, oklch(0.92 0.035 195 / 0.55), transparent 58%),
+      radial-gradient(900px 640px at -8% 112%, oklch(0.93 0.04 150 / 0.5), transparent 55%),
+      linear-gradient(177deg, oklch(0.975 0.006 95), oklch(0.935 0.008 90));
+  }
+  .shell-device {
+    width: 400px;
+    height: min(880px, calc(100dvh - 80px));
+    border-radius: 46px;
+    flex-shrink: 0;
+    box-shadow:
+      0 2px 6px rgba(40,38,34,0.05),
+      0 28px 56px rgba(40,38,34,0.16),
+      0 56px 120px rgba(40,38,34,0.13),
+      0 0 0 1px rgba(40,38,34,0.05);
+  }
+}
+
+/* desktop — reveal the branded side panel */
+@media (min-width: 1024px) {
+  .shell-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 440px;
+    color: var(--ink);
+  }
+  .shell-kicker {
+    font-family: var(--mono); font-weight: 600; font-size: 12px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-d);
+  }
+  .shell-headline {
+    margin: 0; font-size: clamp(42px, 4vw, 56px); font-weight: 800;
+    letter-spacing: -0.035em; line-height: 1.0;
+  }
+  .shell-sub {
+    margin: 0; max-width: 42ch; font-size: 16px; line-height: 1.55; color: var(--ink-2);
+  }
+  .shell-decks { display: flex; gap: 10px; margin-top: 6px; }
+  .shell-deck {
+    width: 42px; height: 42px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-weight: 700; font-size: 15px;
+    box-shadow: var(--shadow-soft);
+  }
+  .shell-meta {
+    font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.04em;
+    color: var(--ink-3); margin-top: 2px;
+  }
 }

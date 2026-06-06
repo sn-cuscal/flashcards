@@ -124,24 +124,27 @@ export function App({ config, data, quiz }) {
   return (
     <div className="aif-root">
       <div className="aif-top" />
-      {tab === "home" && (
-        <HomeScreen
-          cats={categories} cards={cards} progress={S.progress} streak={S.streak}
-          dueCount={dueCount} config={config}
-          onReview={startReview} onCategory={startCategory} onShuffle={startShuffleAll} />
-      )}
-      {tab === "quiz" && <QuizPicker cats={quizCats} onPick={startQuiz} stats={S.quiz} progress={S.quizProgress} onReset={clearQuiz} />}
-      {tab === "stats" && (
-        <StatsScreen
-          cats={categories} cards={cards} progress={S.progress} streak={S.streak}
-          quiz={S.quiz} reviews={S.reviews} onReset={resetProgress} />
-      )}
-      {tab === "style" && (
-        <StyleScreen
-          styleId={S.styleId} onStyle={(id) => setS((st) => ({ ...st, styleId: id }))}
-          shuffleOn={S.shuffleOn} onShuffleToggle={() => setS((st) => ({ ...st, shuffleOn: !st.shuffleOn }))}
-          config={config} />
-      )}
+      {/* keyed so each tab remounts and replays its enter transition */}
+      <div className="tab-view" key={tab}>
+        {tab === "home" && (
+          <HomeScreen
+            cats={categories} cards={cards} progress={S.progress} streak={S.streak}
+            dueCount={dueCount} config={config}
+            onReview={startReview} onCategory={startCategory} onShuffle={startShuffleAll} />
+        )}
+        {tab === "quiz" && <QuizPicker cats={quizCats} onPick={startQuiz} stats={S.quiz} progress={S.quizProgress} onReset={clearQuiz} />}
+        {tab === "stats" && (
+          <StatsScreen
+            cats={categories} cards={cards} progress={S.progress} streak={S.streak}
+            quiz={S.quiz} reviews={S.reviews} onReset={resetProgress} />
+        )}
+        {tab === "style" && (
+          <StyleScreen
+            styleId={S.styleId} onStyle={(id) => setS((st) => ({ ...st, styleId: id }))}
+            shuffleOn={S.shuffleOn} onShuffleToggle={() => setS((st) => ({ ...st, shuffleOn: !st.shuffleOn }))}
+            config={config} />
+        )}
+      </div>
       <BottomNav tab={tab} onTab={setTab} />
     </div>
   );

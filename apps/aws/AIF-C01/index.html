@@ -9,25 +9,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
 <style>
-  html, body { margin: 0; height: 100%; }
+  html, body { margin: 0; }
   body {
-    background:
-      radial-gradient(120% 90% at 50% -10%, oklch(0.95 0.008 90), oklch(0.91 0.006 85) 70%);
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
     font-family: "Hanken Grotesk", system-ui, sans-serif;
+    background: oklch(0.985 0.004 95);
   }
-  #stage { display: flex; align-items: center; justify-content: center; width: 100vw; height: 100vh; }
-  #scaler { transform-origin: center center; }
-  #root { width: 402px; height: 874px; }
 </style>
 </head>
 <body>
-  <div id="stage">
-    <div id="scaler">
-      <div id="root"></div>
-    </div>
-  </div>
+  <div id="root"></div>
   <script type="module" src="./main.jsx"></script>
 </body>
 </html>

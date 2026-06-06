@@ -30,8 +30,10 @@ Two layers, kept strictly separate:
   URL path (`apps/aws/AIF-C01/` -> `/aws/AIF-C01/`).
 
 Data flow: an app's `main.jsx` calls `createApp({ config, data, quiz })`, which
-mounts `App` inside the `IOSDevice` frame. `App` takes `{ config, data, quiz }`
-as props — it reads nothing global.
+mounts `App` into the page `#root`. `App` takes `{ config, data, quiz }` as
+props — it reads nothing global. The host `index.html` owns the responsive
+shell: the app is mobile-first (fills the viewport on phones) and renders as a
+centred portrait column on wider screens.
 
 ### Module contracts
 
@@ -45,8 +47,8 @@ as props — it reads nothing global.
 - `lib/spacedRepetition.js` — Leitner-style scheduling (`gradeRec`, `reviewQueue`, …).
 - `lib/u.js` — re-exports the above as a single `U` namespace; components call `U.x`.
 - `components/icons.jsx` — the `Ic` icon set.
-- `components/Ring.jsx`, `IOSFrame.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`.
-- `App.jsx` — state, persistence, tab routing. `createApp.jsx` — entry + responsive scaler.
+- `components/Ring.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`.
+- `App.jsx` — state, persistence, tab routing. `createApp.jsx` — entry (mounts `App` into `#root`).
 
 ## Conventions
 
