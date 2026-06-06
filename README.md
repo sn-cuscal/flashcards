@@ -22,11 +22,12 @@ src/framework/            shared, exam-agnostic code (never copied per app)
     u.js                  aggregates the above into the `U` namespace
   App.jsx                 root state, persistence, routing
   createApp.jsx           entry factory (mounts App in the responsive shell)
-  styles.css              all component styles
+  styles.css              component styles, responsive shell, reduced-motion
 
 apps/                     one directory per app; the path is the URL path
   aws/AIF-C01/            -> served at /aws/AIF-C01/
-    index.html            page entry
+    index.html            page entry (host page: fonts + #root)
+    favicon.svg           app icon (stacked-cards mark)
     main.jsx              wires config + datasets into createApp
     config.js             app-specific copy + storeKey
     cards.js              flashcard dataset (export const data)
@@ -56,11 +57,11 @@ Pages sub-path without hard-coding the repository name.
 ## Adding a new app
 
 1. Create `apps/<vendor>/<exam>/` (the directory path becomes the URL path).
-2. Add four files, copying an existing app as a template:
+2. Add these files, copying an existing app as a template:
    - `config.js` — set a **unique** `storeKey`, plus the title/eyebrow/footer copy.
    - `cards.js` — `export const data = { categories, cards }`.
    - `quiz.js` — `export const quiz = { categories }`.
-   - `main.jsx` and `index.html` — copy as-is, only the `<title>` changes.
+   - `main.jsx`, `index.html`, `favicon.svg` — copy as-is, only the `<title>` changes.
 3. `npm run build`. The new app appears at its own path in `dist/`.
 
 No framework code is touched.

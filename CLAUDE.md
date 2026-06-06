@@ -30,10 +30,12 @@ Two layers, kept strictly separate:
   URL path (`apps/aws/AIF-C01/` -> `/aws/AIF-C01/`).
 
 Data flow: an app's `main.jsx` calls `createApp({ config, data, quiz })`, which
-mounts `App` into the page `#root`. `App` takes `{ config, data, quiz }` as
-props — it reads nothing global. The host `index.html` owns the responsive
-shell: the app is mobile-first (fills the viewport on phones) and renders as a
-centred portrait column on wider screens.
+mounts `App` (wrapped in `DesktopShell`) into the page `#root`. `App` takes
+`{ config, data, quiz }` as props — it reads nothing global. `DesktopShell` +
+`styles.css` own the responsive layout: mobile-first (the app fills the viewport
+on phones), a centred portrait column on tablets, and a branded side panel
+beside the column on desktop. `index.html` is just the host page (fonts +
+`#root`).
 
 ### Module contracts
 
@@ -47,8 +49,9 @@ centred portrait column on wider screens.
 - `lib/spacedRepetition.js` — Leitner-style scheduling (`gradeRec`, `reviewQueue`, …).
 - `lib/u.js` — re-exports the above as a single `U` namespace; components call `U.x`.
 - `components/icons.jsx` — the `Ic` icon set.
-- `components/Ring.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`.
+- `components/Ring.jsx`, `DesktopShell.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`.
 - `App.jsx` — state, persistence, tab routing. `createApp.jsx` — entry (mounts `App` into `#root`).
+- `styles.css` — component styles, the responsive shell, and reduced-motion fallbacks (page/session/flip transitions degrade to opacity-only fades).
 
 ## Conventions
 
@@ -64,8 +67,9 @@ centred portrait column on wider screens.
 ## Adding an app
 
 Create `apps/<vendor>/<exam>/` with `config.js`, `cards.js`, `quiz.js`,
-`main.jsx`, `index.html` (copy an existing app; only the `<title>` and the three
-data/config files change). The build auto-discovers `apps/**/index.html` — no
+`main.jsx`, `index.html`, and `favicon.svg` (copy an existing app; only the
+`<title>` and the three data/config files change — `main.jsx`, `index.html` and
+`favicon.svg` copy as-is). The build auto-discovers `apps/**/index.html` — no
 config edits. Set a unique `storeKey`.
 
 ## Build / deploy
