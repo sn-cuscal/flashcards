@@ -312,7 +312,11 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  /* keep page + session changes legible with an opacity-only fade (no movement) */
+  .tab-view { animation: fadeIn .2s ease both !important; }
+  .study { animation: fadeIn .24s ease both !important; }
 }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* ============================================================
    RESPONSIVE SHELL
