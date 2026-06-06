@@ -1,0 +1,20 @@
+/* icons.jsx — simple stroke icon set (Ic) */
+
+import React from 'react'
+
+export const Ic = {
+  cards: (p) => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...p}><rect x="3" y="6" width="14" height="14" rx="3" stroke="currentColor" strokeWidth="1.8"/><path d="M7 4.5h9.5A3.5 3.5 0 0 1 20 8v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>,
+  quiz: (p) => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...p}><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.2 1.3c0 1.9-2.5 2-2.5 3.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><circle cx="12" cy="17" r="1.1" fill="currentColor"/></svg>,
+  chart: (p) => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...p}><path d="M5 19V11M12 19V5M19 19v-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>,
+  style: (p) => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...p}><circle cx="8" cy="8" r="4.2" stroke="currentColor" strokeWidth="1.8"/><rect x="13" y="13" width="8" height="8" rx="2.2" stroke="currentColor" strokeWidth="1.8"/><path d="M3 21l4-5 4 5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>,
+  flame: (p) => <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M13 2c.5 3-1.5 4.2-2.8 5.6C8.8 9.2 8 10.6 8 12.5a4 4 0 0 0 .9 2.5c-.2-1.4.5-2.6 1.6-3.3-.3 1.8.6 2.7 1.6 3.6 1.4 1.2 1.4 2.6.9 3.7 2.3-.6 4-2.8 4-5.6 0-3.4-2.4-5-3.2-7.2-.5 1-1.3 1.6-2.3 2C12.7 9.6 13.6 6 13 2z"/></svg>,
+  shuffle: (p) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" {...p}><path d="M3 7h3.5c1.6 0 2.7 1 3.6 2.3l3.8 5.4c.9 1.3 2 2.3 3.6 2.3H21M3 17h3.5c1.6 0 2.7-1 3.6-2.3M21 7h-3.4c-1.5 0-2.6.9-3.5 2.1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><path d="M18.5 4.5 21 7l-2.5 2.5M18.5 14.5 21 17l-2.5 2.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  bolt: (p) => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" {...p}><path d="M13 2 4.5 13.5H11l-1 8.5L19.5 10H13l0-8z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round"/></svg>,
+  x: (p) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" {...p}><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round"/></svg>,
+  check: (p) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" {...p}><path d="M4 12.5l5 5L20 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  back: (p) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" {...p}><path d="M14 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  redo: (p) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" {...p}><path d="M4 9h11a4.5 4.5 0 1 1-4.5 4.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7 5.5 3.5 9 7 12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  flip: (p) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" {...p}><path d="M12 3v18" stroke="currentColor" strokeWidth="1.7" strokeDasharray="2 2.5"/><path d="M9 7 5 12l4 5V7zM15 7l4 5-4 5V7z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/></svg>,
+  arrowR: (p) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" {...p}><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  info: (p) => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" {...p}><circle cx="12" cy="12" r="9.2" stroke="currentColor" strokeWidth="2"/><path d="M12 11v5.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/><circle cx="12" cy="7.4" r="1.25" fill="currentColor"/></svg>,
+};

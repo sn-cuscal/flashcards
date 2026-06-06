@@ -1,5 +1,9 @@
 /* flashcard.jsx — flip (robust half-turn, single face) + swipe-to-grade, in 3 styles */
 
+import React from 'react'
+import { Ic } from './icons.jsx'
+import { U } from '../lib/u.js'
+
 function FaceContent({ side, card, cat, styleId, showUse, onToggleUse }) {
   const hue = cat.hue;
   const chipStyle =
@@ -144,4 +148,4 @@ function Flashcard({ card, cat, styleId, flipped, exiting, onFlip, onGrade }) {
   );
 }
 
-window.Flashcard = Flashcard;
+export { Flashcard };

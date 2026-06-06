@@ -14,6 +14,8 @@
 //   <IOSDevice dark title="Search" keyboard>…</IOSDevice>
 /* END USAGE */
 
+import React from 'react'
+
 // ─────────────────────────────────────────────────────────────
 // Status bar
 // ─────────────────────────────────────────────────────────────
@@ -344,6 +346,4 @@ function IOSKeyboard({ dark = false }) {
   );
 }
 
-Object.assign(window, {
-  IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard,
-});
+export { IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard };

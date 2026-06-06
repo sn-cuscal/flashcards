@@ -1,13 +1,18 @@
 /* app.jsx — root state, persistence, routing (mounts inside the iOS frame) */
 
-const STORE_KEY = "aif_c01_v1";
+import React from 'react'
+import { U } from './lib/u.js'
+import { Ic } from './components/icons.jsx'
+import { HomeScreen, StatsScreen, StyleScreen, BottomNav } from './components/Home.jsx'
+import { StudySession, QuizSession } from './components/Study.jsx'
+
 const DEFAULT = {
   progress: {}, streak: 0, lastDate: null, session: 1,
   reviews: 0, quiz: { correct: 0, total: 0 }, quizProgress: {},
   styleId: "minimal", shuffleOn: true,
 };
 
-function load() {
+function load(STORE_KEY) {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (raw) return { ...DEFAULT, ...JSON.parse(raw) };
@@ -15,17 +20,17 @@ function load() {
   return { ...DEFAULT };
 }
 
-function App() {
-  const { categories, cards } = window.AIF;
+export function App({ config, data, quiz }) {
+  const { categories, cards } = data;
   const catMap = React.useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c])), []);
-  const quizCats = window.AIF_QUIZ.categories;
+  const quizCats = quiz.categories;
 
-  const [S, setS] = React.useState(load);
+  const [S, setS] = React.useState(() => load(config.storeKey));
   const [tab, setTab] = React.useState("home");
   const [session, setSession] = React.useState(null); // {type, queue|pool, title}
 
   React.useEffect(() => {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) {}
+    try { localStorage.setItem(config.storeKey, JSON.stringify(S)); } catch (e) {}
   }, [S]);
 
   // ---- streak helper ----
@@ -109,9 +114,9 @@ function App() {
         queue={session.queue} catMap={catMap} styleId={S.styleId} title={session.title}
         onGrade={gradeCard} onExit={() => setSession(null)} />;
     return <QuizSession
-      quiz={session.quiz} saved={session.saved}
+      quiz={session.quiz} saved={session.saved} config={config}
       onAnswer={quizAnswer}
-      onSave={(data) => saveQuiz(session.quiz.id, data)}
+      onSave={(qd) => saveQuiz(session.quiz.id, qd)}
       onClear={() => clearQuiz(session.quiz.id)}
       onExit={() => setSession(null)} />;
   }
@@ -122,7 +127,7 @@ function App() {
       {tab === "home" && (
         <HomeScreen
           cats={categories} cards={cards} progress={S.progress} streak={S.streak}
-          dueCount={dueCount}
+          dueCount={dueCount} config={config}
           onReview={startReview} onCategory={startCategory} onShuffle={startShuffleAll} />
       )}
       {tab === "quiz" && <QuizPicker cats={quizCats} onPick={startQuiz} stats={S.quiz} progress={S.quizProgress} onReset={clearQuiz} />}
@@ -134,7 +139,8 @@ function App() {
       {tab === "style" && (
         <StyleScreen
           styleId={S.styleId} onStyle={(id) => setS((st) => ({ ...st, styleId: id }))}
-          shuffleOn={S.shuffleOn} onShuffleToggle={() => setS((st) => ({ ...st, shuffleOn: !st.shuffleOn }))} />
+          shuffleOn={S.shuffleOn} onShuffleToggle={() => setS((st) => ({ ...st, shuffleOn: !st.shuffleOn }))}
+          config={config} />
       )}
       <BottomNav tab={tab} onTab={setTab} />
     </div>
@@ -200,13 +206,3 @@ function QuizPicker({ cats, onPick, stats, progress, onReset }) {
     </div>
   );
 }
-
-function Root() {
-  return (
-    <IOSDevice>
-      <App />
-    </IOSDevice>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(<Root />);

@@ -1,7 +1,7 @@
 /* AIF-C01 quiz bank — curated multiple-choice questions, grouped by category.
    Each question: { q, options: [4], correct: <exact option text>, explain } */
 
-(function () {
+export const quiz = (function () {
   const Q = (q, options, correct, explain) => ({ q, options, correct, explain });
 
   const categories = [
@@ -202,5 +202,5 @@
     },
   ];
 
-  window.AIF_QUIZ = { categories };
+  return { categories };
 })();

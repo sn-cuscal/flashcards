@@ -1,5 +1,10 @@
 /* home.jsx — HomeScreen, StatsScreen, StyleScreen, BottomNav */
 
+import React from 'react'
+import { Ring } from './Ring.jsx'
+import { Ic } from './icons.jsx'
+import { U } from '../lib/u.js'
+
 function catStats(cards, progress, catId) {
   const list = cards.filter((c) => c.cat === catId);
   let known = 0, learning = 0;
@@ -12,7 +17,7 @@ function catStats(cards, progress, catId) {
 }
 
 // ───────────────────────── HOME ─────────────────────────
-function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCategory, onShuffle }) {
+function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCategory, onShuffle, config }) {
   const mastery = U.masteryOf(cards, progress);
   const knownTotal = cards.filter((c) => progress[c.id]?.status === "known").length;
 
@@ -21,8 +26,8 @@ function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCateg
       <div className="hd fade-up">
         <div className="hd-row">
           <div>
-            <div className="hd-eyebrow">AIF-C01 · AWS Certified AI Practitioner</div>
-            <h1 className="hd-title">Flash Cards</h1>
+            <div className="hd-eyebrow">{config.home.eyebrow}</div>
+            <h1 className="hd-title">{config.home.title}</h1>
           </div>
           <div className="streak"><Ic.flame /> {streak}</div>
         </div>
@@ -145,7 +150,7 @@ function MiniCard({ styleId }) {
   </div>;
 }
 
-function StyleScreen({ styleId, onStyle, shuffleOn, onShuffleToggle }) {
+function StyleScreen({ styleId, onStyle, shuffleOn, onShuffleToggle, config }) {
   const opts = [
     { id: "minimal", name: "Minimal", desc: "Airy white. Maximum focus." },
     { id: "tinted", name: "Tinted", desc: "Soft color-coded by deck." },
@@ -175,7 +180,7 @@ function StyleScreen({ styleId, onStyle, shuffleOn, onShuffleToggle }) {
         </div>
       </div>
       <div style={{ padding: "16px 24px", fontSize: 12.5, color: "var(--ink-3)", lineHeight: 1.5 }}>
-        Built from the AIF-C01 exam guide v1.1. Smart Review uses spaced repetition — cards you miss come back sooner.
+        {config.footer}
       </div>
       <div style={{ height: 14 }} />
     </div>
@@ -203,4 +208,4 @@ function BottomNav({ tab, onTab }) {
   );
 }
 
-Object.assign(window, { HomeScreen, StatsScreen, StyleScreen, BottomNav, catStats });
+export { HomeScreen, StatsScreen, StyleScreen, BottomNav, catStats };

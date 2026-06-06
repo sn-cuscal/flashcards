@@ -1,4 +1,10 @@
-/* study.jsx — StudySession, SessionComplete, QuizSession (window.StudySession, window.QuizSession) */
+/* study.jsx — StudySession, SessionComplete, QuizSession */
+
+import React from 'react'
+import { Ring } from './Ring.jsx'
+import { Ic } from './icons.jsx'
+import { U } from '../lib/u.js'
+import { Flashcard } from './Flashcard.jsx'
 
 // ───────────────────────── STUDY ─────────────────────────
 function StudySession({ queue, catMap, styleId, title, onGrade, onExit }) {
@@ -125,7 +131,7 @@ function SessionComplete({ got, learning, total, onRepeat, onDone }) {
 }
 
 // ───────────────────────── QUIZ ─────────────────────────
-function QuizSession({ quiz, saved, onAnswer, onSave, onClear, onExit }) {
+function QuizSession({ quiz, saved, config, onAnswer, onSave, onClear, onExit }) {
   const [qs] = React.useState(() =>
     (saved && saved.qs) || U.shuffle(quiz.questions).map((item) => ({
       q: item.q,
@@ -191,7 +197,7 @@ function QuizSession({ quiz, saved, onAnswer, onSave, onClear, onExit }) {
               </React.Fragment>} />
           </div>
           <h2>{pct >= 70 ? "Passing pace!" : "More reps needed"}</h2>
-          <p>{pct >= 70 ? `You\u2019d clear the 700 line on ${quiz.name}.` : `Review the ${quiz.name} deck, then run it again.`}</p>
+          <p>{pct >= 70 ? `You\u2019d clear the ${config.quiz.passLine} line on ${quiz.name}.` : `Review the ${quiz.name} deck, then run it again.`}</p>
           <div style={{ width: "100%" }}>
             <button className="reset" style={{ margin: 0, color: "var(--ink)", fontWeight: 700 }} onClick={onExit}>Done</button>
           </div>
@@ -250,4 +256,4 @@ function QuizSession({ quiz, saved, onAnswer, onSave, onClear, onExit }) {
   );
 }
 
-Object.assign(window, { StudySession, SessionComplete, QuizSession });
+export { StudySession, SessionComplete, QuizSession };

@@ -3,7 +3,7 @@
    quiz:true → eligible for multiple-choice quiz mode
    use      → concise "purpose / why it matters", revealed by the Show purpose button */
 
-(function () {
+export const data = (function () {
   const categories = [
     { id: 'services', name: 'AWS Services',     short: 'Services',  hue: 188, blurb: 'What does each service do? — the #1 question pattern.' },
     { id: 'acronyms', name: 'Acronyms',         short: 'Acronyms',  hue: 286, blurb: 'Decode every abbreviation cold.' },
@@ -126,5 +126,5 @@
     c('p18', 'patterns', 'Need to audit API activity?', 'AWS CloudTrail', { use: 'Trigger words: audit, who did what, API calls.' }),
   ];
 
-  window.AIF = { categories, cards };
+  return { categories, cards };
 })();
