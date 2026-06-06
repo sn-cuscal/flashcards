@@ -4,7 +4,7 @@ import React from 'react'
 import { Ic } from './icons.jsx'
 import { U } from '../lib/u.js'
 
-function FaceContent({ side, card, cat, styleId, showUse, onToggleUse }) {
+function FaceContent({ side, card, cat, styleId, reveal, onReveal }) {
   const hue = cat.hue;
   const chipStyle =
     styleId === "tinted"
@@ -34,17 +34,38 @@ function FaceContent({ side, card, cat, styleId, showUse, onToggleUse }) {
             <div className="fc-aLabel" style={aLabelStyle}>Answer</div>
             <div className="fc-rule" style={styleId === "tinted" ? { background: `oklch(0.86 0.04 ${hue})` } : undefined} />
             <div className="fc-a" style={qColor}>{card.back}</div>
-            {card.use && (
+            {(card.use || card.example) && (
               <div className="fc-use-slot">
-                <div className={"fc-use" + (showUse ? " show" : "")} aria-hidden={!showUse}>
-                  <span className="fc-use-k" style={aLabelStyle}>Purpose</span>
-                  <span className="fc-use-t" style={styleId === "tinted" ? { color: U.catDeep(hue) } : undefined}>{card.use}</span>
+                <div className="fc-reveal-btns">
+                  {card.use && (
+                    <button
+                      className={"fc-use-btn" + (reveal === "use" ? " active" : "")}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); onReveal("use"); }}
+                    ><Ic.info /> Show purpose</button>
+                  )}
+                  {card.example && (
+                    <button
+                      className={"fc-use-btn" + (reveal === "example" ? " active" : "")}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); onReveal("example"); }}
+                    ><Ic.bulb /> Show example</button>
+                  )}
                 </div>
-                <button
-                  className={"fc-use-btn" + (showUse ? " hide" : "")}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => { e.stopPropagation(); onToggleUse(); }}
-                ><Ic.info /> Show purpose</button>
+                <div className="fc-reveal-body">
+                  {reveal === "use" && card.use && (
+                    <div className="fc-use show" key="use">
+                      <span className="fc-use-k" style={aLabelStyle}>Purpose</span>
+                      <span className="fc-use-t" style={qColor}>{card.use}</span>
+                    </div>
+                  )}
+                  {reveal === "example" && card.example && (
+                    <div className="fc-use show" key="example">
+                      <span className="fc-use-k" style={aLabelStyle}>Example</span>
+                      <span className="fc-use-t" style={qColor}>{card.example}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             {card.tag && <div className="fc-tag">{card.tag}</div>}
@@ -60,7 +81,8 @@ function Flashcard({ card, cat, styleId, flipped, exiting, onFlip, onGrade }) {
   // ---- flip (scaleX squeeze — reliable, no 3D) ----
   const [face, setFace] = React.useState(flipped ? "back" : "front");
   const [sq, setSq] = React.useState(false);
-  const [showUse, setShowUse] = React.useState(false);
+  // which extra is revealed on the back: null | "use" | "example" (mutually exclusive)
+  const [reveal, setReveal] = React.useState(null);
   const animating = React.useRef(false);
 
   React.useEffect(() => {
@@ -145,7 +167,7 @@ function Flashcard({ card, cat, styleId, flipped, exiting, onFlip, onGrade }) {
           }}
         >
           <div className="fc-face" key={face} style={{ position: "static", height: "100%" }}>
-            <FaceContent side={face} card={card} cat={cat} styleId={styleId} showUse={showUse} onToggleUse={() => setShowUse((v) => !v)} />
+            <FaceContent side={face} card={card} cat={cat} styleId={styleId} reveal={reveal} onReveal={(kind) => setReveal((r) => (r === kind ? null : kind))} />
           </div>
         </div>
       </div>

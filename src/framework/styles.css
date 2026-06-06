@@ -199,19 +199,25 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .fc-rule { height: 1px; background: var(--line); margin: 0 0 16px; }
 
-/* purpose reveal on card back — fixed slot (no layout shift) + smooth fade */
+/* purpose + example reveal on card back — two toggle buttons over a shared fade-in slot */
 .fc-use-slot { position: relative; margin-top: 16px; }
-.fc-use-btn { position: absolute; top: 0; left: 0; display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; font-weight: 600; padding: 8px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--accent-soft); color: var(--accent-d); transition: opacity .22s ease, transform .1s ease; }
+.fc-reveal-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.fc-use-btn { display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.07em; text-transform: uppercase; font-weight: 600; padding: 8px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--accent-soft); color: var(--accent-d); transition: background .2s ease, color .2s ease, transform .1s ease; }
 .fc-use-btn:active { transform: scale(0.95); }
-.fc-use-btn.hide { opacity: 0; pointer-events: none; }
+.fc-use-btn.active { background: var(--accent); border-color: transparent; color: #fff; }
+.fc-reveal-body { margin-top: 12px; }
+.fc-reveal-body .fc-use { animation: revealIn .28s cubic-bezier(.2,.8,.2,1) both; }
 .fc-use { opacity: 0; transform: translateY(7px); transition: opacity .32s ease, transform .32s cubic-bezier(.2,.8,.2,1); }
 .fc-use.show { opacity: 1; transform: none; }
 .fc-use-k { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent-d); margin-bottom: 6px; }
 .fc-use-t { font-size: 15px; line-height: 1.34; color: var(--ink-2); text-wrap: pretty; }
+@keyframes revealIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 .st-editorial .fc-use-btn { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.16); color: var(--accent); }
+.st-editorial .fc-use-btn.active { background: var(--accent); border-color: transparent; color: oklch(0.255 0.012 70); }
 .st-editorial .fc-use-k { color: var(--accent); }
 .st-editorial .fc-use-t { color: oklch(0.82 0.012 80); }
 .st-tinted .fc-use-btn { background: rgba(255,255,255,0.5); border-color: transparent; }
+.st-tinted .fc-use-btn.active { background: #fff; color: var(--accent-d); }
 
 /* grade buttons */
 .grade { display: flex; gap: 12px; padding: 16px 20px 8px; flex-shrink: 0; }

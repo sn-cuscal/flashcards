@@ -17,4 +17,5 @@ export const Ic = {
   flip: (p) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" {...p}><path d="M12 3v18" stroke="currentColor" strokeWidth="1.7" strokeDasharray="2 2.5"/><path d="M9 7 5 12l4 5V7zM15 7l4 5-4 5V7z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/></svg>,
   arrowR: (p) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" {...p}><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   info: (p) => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" {...p}><circle cx="12" cy="12" r="9.2" stroke="currentColor" strokeWidth="2"/><path d="M12 11v5.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/><circle cx="12" cy="7.4" r="1.25" fill="currentColor"/></svg>,
+  bulb: (p) => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" {...p}><path d="M9.5 18.5h5M10.5 21h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1 1.1 1.7v.5h5v-.5c0-.7.4-1.2 1.1-1.7A6 6 0 0 0 12 3z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>,
 };
