@@ -66,6 +66,11 @@ function Flashcard({ card, cat, styleId, flipped, exiting, onFlip, onGrade }) {
   React.useEffect(() => {
     const target = flipped ? "back" : "front";
     if (target === face || animating.current) return;
+    // Reduced motion: the scaleX squeeze is pure movement, and the global
+    // reduced-motion rule zeroes its transition — so it reads as a jarring
+    // squished frame. Skip it: swap the face at once and let it crossfade (CSS).
+    const reduce = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) { setFace(target); return; }
     animating.current = true;
     setSq(true);
     const t = setTimeout(() => {
@@ -139,7 +144,7 @@ function Flashcard({ card, cat, styleId, flipped, exiting, onFlip, onGrade }) {
             transition: "transform .155s ease-in-out",
           }}
         >
-          <div className="fc-face" style={{ position: "static", height: "100%" }}>
+          <div className="fc-face" key={face} style={{ position: "static", height: "100%" }}>
             <FaceContent side={face} card={card} cat={cat} styleId={styleId} showUse={showUse} onToggleUse={() => setShowUse((v) => !v)} />
           </div>
         </div>
