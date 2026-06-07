@@ -65,15 +65,6 @@ function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCateg
       <div className="sec-label" style={{ paddingBottom: 6 }}><span>Difficulty</span></div>
       <DiffFilter diff={diff} onDiff={onDiff} />
 
-      <button className="cta fade-up" style={{ animationDelay: ".06s" }} onClick={onReview} disabled={!shown.length}>
-        <div className="cta-ic"><Ic.bolt /></div>
-        <div className="cta-t">
-          <h3>Smart Review</h3>
-          <p>Spaced repetition — the cards you need most</p>
-        </div>
-        <div className="cta-n">{dueCount} due</div>
-      </button>
-
       <div className="sec-label">
         <span>Decks · {shown.length} cards</span>
         <button onClick={onShuffle} disabled={!shown.length}>Shuffle all</button>
@@ -96,6 +87,15 @@ function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCateg
           );
         })}
       </div>
+
+      <button className="cta fade-up" style={{ animationDelay: ".06s", marginTop: 8 }} onClick={onReview} disabled={!shown.length}>
+        <div className="cta-ic"><Ic.bolt /></div>
+        <div className="cta-t">
+          <h3>Smart Review</h3>
+          <p>Spaced repetition — the cards you need most</p>
+        </div>
+        <div className="cta-n">{dueCount} due</div>
+      </button>
       <div style={{ height: 14 }} />
     </div>
   );
