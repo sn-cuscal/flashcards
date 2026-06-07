@@ -38,7 +38,9 @@ Every card and quiz question carries a difficulty (`easy`, `intermediate` or
 `advanced`). A filter on the Cards and Quiz screens scopes study, Smart Review
 and quiz draws to one tier. Quiz questions support both single-answer and
 multiple-response: a question's `correct` is a string for single-answer or a
-string array for multiple-response (graded all-or-nothing).
+string array for multiple-response (graded all-or-nothing). The Cards screen
+reads top to bottom as difficulty filter, decks, Smart Review, then the mastery
+summary.
 
 ## Develop
 

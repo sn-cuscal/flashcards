@@ -49,7 +49,7 @@ beside the column on desktop. `index.html` is just the host page (fonts +
 - `lib/spacedRepetition.js` — Leitner-style scheduling (`gradeRec`, `reviewQueue`, …). `gradeRec` marks a card `status: "known"` (= mastered) at `box >= 2`; every progress/mastery/due counter keys off `status === "known"`.
 - `lib/u.js` — re-exports the above as a single `U` namespace; components call `U.x`. Also owns the difficulty axis: `U.DIFFS`, `U.diffMeta(id)`, `U.filterDiff(items, diff)`.
 - `components/icons.jsx` — the `Ic` icon set.
-- `components/Ring.jsx`, `DesktopShell.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`. `Study.jsx`'s `QuizSession` renders single-answer and multiple-response questions (checkbox toggles + Submit, all-or-nothing). `Home.jsx` exports the shared `DiffFilter` (All / Easy / Intermediate / Advanced) used on the Cards and Quiz screens.
+- `components/Ring.jsx`, `DesktopShell.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`. `Study.jsx`'s `QuizSession` renders single-answer and multiple-response questions (checkbox toggles + Submit, all-or-nothing). `Home.jsx` exports the shared `DiffFilter` (All / Easy / Intermediate / Advanced) used on the Cards and Quiz screens; the Cards screen orders its blocks header → difficulty filter → decks → Smart Review → mastery band.
 - `App.jsx` — state, persistence, tab routing. `createApp.jsx` — entry (mounts `App` into `#root`).
 - `styles.css` — component styles, the responsive shell, and reduced-motion fallbacks (page/session/flip transitions degrade to opacity-only fades).
 
