@@ -10,7 +10,10 @@ export function gradeRec(rec, correct, session) {
   r.seen = (r.seen || 0) + 1;
   if (correct) {
     r.box = Math.min(5, (r.box || 1) + 1);
-    r.status = r.box >= 4 ? "known" : "learning";
+    // A correct recall (box 2+) counts as mastered; box 1 is only ever a card
+    // that was just reset by a miss. Reaching box 4 needed three spaced correct
+    // recalls, which almost never happened, so every "known" counter sat at 0.
+    r.status = r.box >= 2 ? "known" : "learning";
   } else {
     r.box = 1;
     r.status = "learning";

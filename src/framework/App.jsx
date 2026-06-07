@@ -12,10 +12,23 @@ const DEFAULT = {
   styleId: "minimal", shuffleOn: true,
 };
 
+// Saved progress predates the box>=2 mastery rule (it was box>=4), so stored
+// `status` values can be stale. Recompute each record's status from its box —
+// boxes, due dates and seen counts are untouched, so no progress is lost.
+function migrate(st) {
+  const progress = {};
+  for (const [id, r] of Object.entries(st.progress || {})) {
+    if (!r) continue;
+    const status = r.status === "new" ? "new" : (r.box || 1) >= 2 ? "known" : "learning";
+    progress[id] = { ...r, status };
+  }
+  return { ...st, progress };
+}
+
 function load(STORE_KEY) {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return { ...DEFAULT, ...JSON.parse(raw) };
+    if (raw) return migrate({ ...DEFAULT, ...JSON.parse(raw) });
   } catch (e) {}
   return { ...DEFAULT };
 }
