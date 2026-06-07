@@ -53,15 +53,6 @@ function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCateg
         </div>
       </div>
 
-      <div className="band fade-up" style={{ animationDelay: ".03s" }}>
-        <Ring value={mastery} size={64} stroke={8}
-          label={<b style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.03em" }}>{Math.round(mastery * 100)}<span style={{ fontSize: 10 }}>%</span></b>} />
-        <div className="band-meta">
-          <div className="band-k">{filtered ? "Mastery · " + U.diffMeta(diff).name : "Overall mastery"}</div>
-          <div className="band-v"><b>{knownTotal}</b> of <b>{shown.length}</b> cards mastered</div>
-        </div>
-      </div>
-
       <div className="sec-label" style={{ paddingBottom: 6 }}><span>Difficulty</span></div>
       <DiffFilter diff={diff} onDiff={onDiff} />
 
@@ -96,6 +87,15 @@ function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCateg
         </div>
         <div className="cta-n">{dueCount} due</div>
       </button>
+
+      <div className="band fade-up" style={{ marginTop: 8 }}>
+        <Ring value={mastery} size={64} stroke={8}
+          label={<b style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.03em" }}>{Math.round(mastery * 100)}<span style={{ fontSize: 10 }}>%</span></b>} />
+        <div className="band-meta">
+          <div className="band-k">{filtered ? "Mastery · " + U.diffMeta(diff).name : "Overall mastery"}</div>
+          <div className="band-v"><b>{knownTotal}</b> of <b>{shown.length}</b> cards mastered</div>
+        </div>
+      </div>
       <div style={{ height: 14 }} />
     </div>
   );
