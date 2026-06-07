@@ -46,7 +46,7 @@ beside the column on desktop. `index.html` is just the host page (fonts +
 ### Framework internals
 
 - `lib/theme.js` — per-category colour helpers (oklch by hue).
-- `lib/spacedRepetition.js` — Leitner-style scheduling (`gradeRec`, `reviewQueue`, …).
+- `lib/spacedRepetition.js` — Leitner-style scheduling (`gradeRec`, `reviewQueue`, …). `gradeRec` marks a card `status: "known"` (= mastered) at `box >= 2`; every progress/mastery/due counter keys off `status === "known"`.
 - `lib/u.js` — re-exports the above as a single `U` namespace; components call `U.x`.
 - `components/icons.jsx` — the `Ic` icon set.
 - `components/Ring.jsx`, `DesktopShell.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`.
@@ -86,4 +86,7 @@ config edits. Set a unique `storeKey`.
 Card progress, streak, quiz score, in-progress quiz resume, and card style are
 saved to `localStorage` under `config.storeKey` and restored on load — state
 survives reloads and browser restarts. The logic is in `App.jsx` (`load()` and
-the persistence `useEffect`).
+the persistence `useEffect`). `load()` runs `migrate()`, which recomputes each
+record's `status` from its `box` (lossless — boxes, due dates and seen counts
+are kept), so saved progress always reflects the current mastery rule. Extend
+`migrate()` rather than bumping `storeKey` when the record shape changes.
