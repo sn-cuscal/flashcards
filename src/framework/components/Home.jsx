@@ -16,10 +16,30 @@ function catStats(cards, progress, catId) {
   return { n: list.length, known, learning, neu: list.length - known - learning, mastery: U.masteryOf(list, progress) };
 }
 
+// segmented All / Easy / Intermediate / Advanced control, shared by Cards + Quiz
+function DiffFilter({ diff, onDiff }) {
+  const opts = [{ id: "all", name: "All" }, ...U.DIFFS];
+  return (
+    <div className="diff-filter">
+      {opts.map((o) => (
+        <button
+          key={o.id}
+          className={"diff-chip" + (diff === o.id ? " on" : "")}
+          style={diff === o.id && o.hue ? { background: U.catTint(o.hue), color: U.catInk(o.hue), borderColor: U.catSolid(o.hue) } : undefined}
+          onClick={() => onDiff(o.id)}
+        >{o.name}</button>
+      ))}
+    </div>
+  );
+}
+
 // ───────────────────────── HOME ─────────────────────────
-function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCategory, onShuffle, config }) {
-  const mastery = U.masteryOf(cards, progress);
-  const knownTotal = cards.filter((c) => progress[c.id]?.status === "known").length;
+function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCategory, onShuffle, config, diff, onDiff }) {
+  // the difficulty filter scopes every count + deck shown on this screen
+  const shown = U.filterDiff(cards, diff);
+  const mastery = U.masteryOf(shown, progress);
+  const knownTotal = shown.filter((c) => progress[c.id]?.status === "known").length;
+  const filtered = diff && diff !== "all";
 
   return (
     <div className="aif-scroll">
@@ -37,12 +57,15 @@ function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCateg
         <Ring value={mastery} size={64} stroke={8}
           label={<b style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.03em" }}>{Math.round(mastery * 100)}<span style={{ fontSize: 10 }}>%</span></b>} />
         <div className="band-meta">
-          <div className="band-k">Overall mastery</div>
-          <div className="band-v"><b>{knownTotal}</b> of <b>{cards.length}</b> cards mastered</div>
+          <div className="band-k">{filtered ? "Mastery · " + U.diffMeta(diff).name : "Overall mastery"}</div>
+          <div className="band-v"><b>{knownTotal}</b> of <b>{shown.length}</b> cards mastered</div>
         </div>
       </div>
 
-      <button className="cta fade-up" style={{ animationDelay: ".06s" }} onClick={onReview}>
+      <div className="sec-label" style={{ paddingBottom: 6 }}><span>Difficulty</span></div>
+      <DiffFilter diff={diff} onDiff={onDiff} />
+
+      <button className="cta fade-up" style={{ animationDelay: ".06s" }} onClick={onReview} disabled={!shown.length}>
         <div className="cta-ic"><Ic.bolt /></div>
         <div className="cta-t">
           <h3>Smart Review</h3>
@@ -52,19 +75,20 @@ function HomeScreen({ cats, cards, progress, streak, dueCount, onReview, onCateg
       </button>
 
       <div className="sec-label">
-        <span>Decks · {cards.length} cards</span>
-        <button onClick={onShuffle}>Shuffle all</button>
+        <span>Decks · {shown.length} cards</span>
+        <button onClick={onShuffle} disabled={!shown.length}>Shuffle all</button>
       </div>
 
       <div className="decks">
         {cats.map((cat, i) => {
-          const s = catStats(cards, progress, cat.id);
+          const s = catStats(shown, progress, cat.id);
+          const empty = s.n === 0;
           return (
-            <button key={cat.id} className="deck fade-up" style={{ animationDelay: `${0.08 + i * 0.03}s` }} onClick={() => onCategory(cat.id)}>
+            <button key={cat.id} className={"deck fade-up" + (empty ? " is-empty" : "")} style={{ animationDelay: `${0.08 + i * 0.03}s` }} onClick={() => onCategory(cat.id)} disabled={empty}>
               <div className="deck-dot" style={{ background: U.catTint(cat.hue), color: U.catInk(cat.hue) }}>{s.n}</div>
               <div className="deck-meta">
                 <h4>{cat.name}</h4>
-                <p>{cat.blurb}</p>
+                <p>{empty ? "No cards at this level" : cat.blurb}</p>
                 <div className="deck-bar"><i style={{ width: `${Math.max(3, s.mastery * 100)}%`, background: U.catSolid(cat.hue) }} /></div>
               </div>
               <div className="deck-pct">{Math.round(s.mastery * 100)}%</div>
@@ -208,4 +232,4 @@ function BottomNav({ tab, onTab }) {
   );
 }
 
-export { HomeScreen, StatsScreen, StyleScreen, BottomNav, catStats };
+export { HomeScreen, StatsScreen, StyleScreen, BottomNav, catStats, DiffFilter };

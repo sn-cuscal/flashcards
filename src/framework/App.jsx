@@ -3,13 +3,13 @@
 import React from 'react'
 import { U } from './lib/u.js'
 import { Ic } from './components/icons.jsx'
-import { HomeScreen, StatsScreen, StyleScreen, BottomNav } from './components/Home.jsx'
+import { HomeScreen, StatsScreen, StyleScreen, BottomNav, DiffFilter } from './components/Home.jsx'
 import { StudySession, QuizSession } from './components/Study.jsx'
 
 const DEFAULT = {
   progress: {}, streak: 0, lastDate: null, session: 1,
   reviews: 0, quiz: { correct: 0, total: 0 }, quizProgress: {},
-  styleId: "minimal", shuffleOn: true,
+  styleId: "minimal", shuffleOn: true, diffFilter: "all",
 };
 
 // Saved progress predates the box>=2 mastery rule (it was box>=4), so stored
@@ -84,39 +84,55 @@ export function App({ config, data, quiz }) {
     });
   }
 
-  // ---- due count for the home CTA ----
-  const dueCount = React.useMemo(() => cards.filter((c) => {
+  // ---- difficulty filter (study + quiz both honour it) ----
+  function setDiff(id) { setS((st) => ({ ...st, diffFilter: id })); }
+  const visibleCards = React.useMemo(
+    () => U.filterDiff(cards, S.diffFilter), [S.diffFilter]);
+
+  // ---- due count for the home CTA (within the active difficulty) ----
+  const dueCount = React.useMemo(() => visibleCards.filter((c) => {
     const r = S.progress[c.id];
     if (!r || r.status !== "known") return true;
     return r.due <= S.session;
-  }).length, [S.progress, S.session]);
+  }).length, [visibleCards, S.progress, S.session]);
 
   // ---- session launchers ----
   function bumpSession() { setS((st) => ({ ...st, session: st.session + 1 })); }
 
   function startReview() {
-    let q = U.reviewQueue(cards, S.progress, S.session, 20);
-    if (!q.length) q = U.shuffle(cards).slice(0, 20);
+    let q = U.reviewQueue(visibleCards, S.progress, S.session, 20);
+    if (!q.length) q = U.shuffle(visibleCards).slice(0, 20);
+    if (!q.length) return;
     bumpSession();
     setSession({ type: "study", queue: q, title: "Smart Review" });
   }
   function startCategory(catId) {
-    let q = cards.filter((c) => c.cat === catId);
+    let q = visibleCards.filter((c) => c.cat === catId);
+    if (!q.length) return;
     if (S.shuffleOn) q = U.shuffle(q);
     bumpSession();
     setSession({ type: "study", queue: q, title: catMap[catId].name });
   }
   function startShuffleAll() {
+    if (!visibleCards.length) return;
     bumpSession();
-    setSession({ type: "study", queue: U.shuffle(cards), title: "All cards" });
+    setSession({ type: "study", queue: U.shuffle(visibleCards), title: "All cards" });
   }
   function startQuiz(quizCat) {
-    setSession({ type: "quiz", quiz: quizCat, saved: S.quizProgress[quizCat.id] || null });
+    // A saved in-progress quiz resumes its exact snapshot; a fresh start draws
+    // only questions at the active difficulty.
+    const saved = S.quizProgress[quizCat.id] || null;
+    if (!saved) {
+      const qs = U.filterDiff(quizCat.questions, S.diffFilter);
+      if (!qs.length) return;
+      quizCat = { ...quizCat, questions: qs };
+    }
+    setSession({ type: "quiz", quiz: quizCat, saved });
   }
 
   function resetProgress() {
     if (window.confirm("Reset all progress, streak and stats? This can\u2019t be undone.")) {
-      setS({ ...DEFAULT, styleId: S.styleId, shuffleOn: S.shuffleOn });
+      setS({ ...DEFAULT, styleId: S.styleId, shuffleOn: S.shuffleOn, diffFilter: S.diffFilter });
     }
   }
 
@@ -142,10 +158,10 @@ export function App({ config, data, quiz }) {
         {tab === "home" && (
           <HomeScreen
             cats={categories} cards={cards} progress={S.progress} streak={S.streak}
-            dueCount={dueCount} config={config}
+            dueCount={dueCount} config={config} diff={S.diffFilter} onDiff={setDiff}
             onReview={startReview} onCategory={startCategory} onShuffle={startShuffleAll} />
         )}
-        {tab === "quiz" && <QuizPicker cats={quizCats} onPick={startQuiz} stats={S.quiz} progress={S.quizProgress} onReset={clearQuiz} />}
+        {tab === "quiz" && <QuizPicker cats={quizCats} onPick={startQuiz} stats={S.quiz} progress={S.quizProgress} onReset={clearQuiz} diff={S.diffFilter} onDiff={setDiff} />}
         {tab === "stats" && (
           <StatsScreen
             cats={categories} cards={cards} progress={S.progress} streak={S.streak}
@@ -164,10 +180,12 @@ export function App({ config, data, quiz }) {
 }
 
 // quiz landing tab — pick a category
-function QuizPicker({ cats, onPick, stats, progress, onReset }) {
+function QuizPicker({ cats, onPick, stats, progress, onReset, diff, onDiff }) {
   const answered = stats && stats.total > 0;
   const acc = answered ? Math.round((stats.correct / stats.total) * 100) : null;
-  const total = cats.reduce((n, c) => n + c.questions.length, 0);
+  // count only questions at the active difficulty
+  const countFor = (cat) => U.filterDiff(cat.questions, diff).length;
+  const total = cats.reduce((n, c) => n + countFor(c), 0);
   return (
     <div className="aif-scroll">
       <div className="hd">
@@ -184,21 +202,26 @@ function QuizPicker({ cats, onPick, stats, progress, onReset }) {
           )}
         </div>
       </div>
-      <div className="sec-label" style={{ paddingTop: 6 }}>
+      <div className="sec-label" style={{ paddingBottom: 6 }}><span>Difficulty</span></div>
+      <DiffFilter diff={diff} onDiff={onDiff} />
+      <div className="sec-label">
         <span>Pick a category · {total} questions</span>
       </div>
       <div className="decks">
         {cats.map((cat) => {
           const p = progress[cat.id];
           const resuming = p && p.qi > 0 && p.qi < p.qs.length;
+          const n = countFor(cat);
+          // a resumable quiz stays openable even if the filter would hide its set
+          const empty = n === 0 && !resuming;
           return (
-            <div key={cat.id} className="deck" role="button" tabIndex={0} onClick={() => onPick(cat)}>
-              <div className="deck-dot" style={{ background: U.catTint(cat.hue), color: U.catInk(cat.hue) }}>{cat.questions.length}</div>
+            <div key={cat.id} className={"deck" + (empty ? " is-empty" : "")} role="button" tabIndex={empty ? -1 : 0} aria-disabled={empty} onClick={() => !empty && onPick(cat)}>
+              <div className="deck-dot" style={{ background: U.catTint(cat.hue), color: U.catInk(cat.hue) }}>{resuming ? p.qs.length : n}</div>
               <div className="deck-meta">
                 <h4>{cat.name}</h4>
                 {resuming
                   ? <p style={{ color: U.catInk(cat.hue), fontWeight: 600 }}>Resume · {p.qi}/{p.qs.length} answered</p>
-                  : <p>{cat.blurb}</p>}
+                  : <p>{empty ? "No questions at this level" : cat.blurb}</p>}
                 {resuming && (
                   <div className="deck-bar" style={{ marginTop: 8 }}>
                     <i style={{ width: `${(p.qi / p.qs.length) * 100}%`, background: U.catSolid(cat.hue) }} />

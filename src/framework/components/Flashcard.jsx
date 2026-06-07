@@ -13,13 +13,17 @@ function FaceContent({ side, card, cat, styleId, reveal, onReveal }) {
   const dotColor = styleId === "tinted" ? "rgba(255,255,255,0.85)" : U.catSolid(hue);
   const aLabelStyle = styleId === "tinted" ? { color: U.catDeep(hue) } : undefined;
   const qColor = styleId === "tinted" ? { color: U.catDeep(hue) } : undefined;
+  const dm = card.diff ? U.diffMeta(card.diff) : null;
 
   return (
     <React.Fragment>
-      <span className="fc-chip" style={chipStyle}>
-        <i style={{ background: dotColor }} />
-        {cat.name}
-      </span>
+      <div className="fc-head">
+        <span className="fc-chip" style={chipStyle}>
+          <i style={{ background: dotColor }} />
+          {cat.name}
+        </span>
+        {dm && <span className="fc-diff" style={{ background: U.catTint(dm.hue), color: U.catInk(dm.hue) }}>{dm.name}</span>}
+      </div>
 
       {side === "front" ? (
         <React.Fragment>

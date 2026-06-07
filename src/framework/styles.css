@@ -316,6 +316,50 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .card-enter {}
 .fade-up {}
 
+/* ---- difficulty filter + badges ---- */
+.diff-filter { display: flex; gap: 8px; padding: 0 18px 6px; }
+.diff-chip {
+  flex: 1; padding: 9px 6px; border-radius: 12px; border: 1.5px solid var(--line);
+  background: var(--surface); color: var(--ink-2); font-size: 13.5px; font-weight: 650;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.diff-chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.diff-chip:active { transform: scale(0.97); }
+
+.diff-badge {
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 4px 9px; border-radius: 999px; white-space: nowrap;
+}
+/* flashcard face header — category chip (left) + difficulty badge (right) */
+.fc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.fc-diff {
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 5px 10px; border-radius: 999px; white-space: nowrap; flex-shrink: 0;
+}
+
+/* quiz prompt kicker row + multiple-response note */
+.quiz-q-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.quiz-q-row .quiz-q-k { margin-bottom: 0; }
+.quiz-multi-note {
+  margin-top: 12px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--accent-d); font-weight: 650;
+}
+
+/* multiple-response option states (pre-submit selection) */
+.opt.sel { border-color: var(--accent); background: var(--accent-soft); }
+.opt.sel .opt-k { background: var(--accent); color: #fff; }
+.opt-k.box { border-radius: 8px; }
+.quiz-submit { background: var(--accent); color: #fff; }
+.quiz-submit:disabled { opacity: 0.45; }
+
+/* decks / CTA disabled when the active difficulty hides their cards */
+.deck.is-empty, .deck[aria-disabled="true"], .deck:disabled { opacity: 0.5; }
+.deck:disabled { cursor: default; }
+.deck:disabled:active, .deck.is-empty:active, .deck[aria-disabled="true"]:active { transform: none; }
+.cta:disabled { opacity: 0.5; }
+.cta:disabled:active { transform: none; }
+.sec-label button:disabled { opacity: 0.4; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   /* keep page + session changes legible with an opacity-only fade (no movement) */

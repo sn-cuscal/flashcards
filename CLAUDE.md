@@ -40,16 +40,16 @@ beside the column on desktop. `index.html` is just the host page (fonts +
 ### Module contracts
 
 - `apps/*/config.js` — `export default { storeKey, documentTitle, home:{eyebrow,title}, quiz:{passLine}, footer }`.
-- `apps/*/cards.js` — `export const data = { categories, cards }`.
-- `apps/*/quiz.js`  — `export const quiz = { categories }`.
+- `apps/*/cards.js` — `export const data = { categories, cards }`. Each card carries a `diff` of `easy | intermediate | advanced` (the file defaults it by category, then per-card overrides).
+- `apps/*/quiz.js`  — `export const quiz = { categories }`. Each question has a `diff` and a `correct` that is either a string (single-answer) or a string array (multiple-response, graded all-or-nothing); options may number 4–5.
 
 ### Framework internals
 
 - `lib/theme.js` — per-category colour helpers (oklch by hue).
 - `lib/spacedRepetition.js` — Leitner-style scheduling (`gradeRec`, `reviewQueue`, …). `gradeRec` marks a card `status: "known"` (= mastered) at `box >= 2`; every progress/mastery/due counter keys off `status === "known"`.
-- `lib/u.js` — re-exports the above as a single `U` namespace; components call `U.x`.
+- `lib/u.js` — re-exports the above as a single `U` namespace; components call `U.x`. Also owns the difficulty axis: `U.DIFFS`, `U.diffMeta(id)`, `U.filterDiff(items, diff)`.
 - `components/icons.jsx` — the `Ic` icon set.
-- `components/Ring.jsx`, `DesktopShell.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`.
+- `components/Ring.jsx`, `DesktopShell.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`. `Study.jsx`'s `QuizSession` renders single-answer and multiple-response questions (checkbox toggles + Submit, all-or-nothing). `Home.jsx` exports the shared `DiffFilter` (All / Easy / Intermediate / Advanced) used on the Cards and Quiz screens.
 - `App.jsx` — state, persistence, tab routing. `createApp.jsx` — entry (mounts `App` into `#root`).
 - `styles.css` — component styles, the responsive shell, and reduced-motion fallbacks (page/session/flip transitions degrade to opacity-only fades).
 
@@ -83,9 +83,11 @@ config edits. Set a unique `storeKey`.
 
 ## Persistence
 
-Card progress, streak, quiz score, in-progress quiz resume, and card style are
-saved to `localStorage` under `config.storeKey` and restored on load — state
-survives reloads and browser restarts. The logic is in `App.jsx` (`load()` and
+Card progress, streak, quiz score, in-progress quiz resume, card style, and the
+selected difficulty filter (`diffFilter`) are saved to `localStorage` under
+`config.storeKey` and restored on load — state survives reloads and browser
+restarts. The difficulty filter scopes Smart Review, decks and quiz draws; a
+saved in-progress quiz resumes its exact snapshot regardless of the filter. The logic is in `App.jsx` (`load()` and
 the persistence `useEffect`). `load()` runs `migrate()`, which recomputes each
 record's `status` from its `box` (lossless — boxes, due dates and seen counts
 are kept), so saved progress always reflects the current mastery rule. Extend

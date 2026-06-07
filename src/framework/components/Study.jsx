@@ -132,37 +132,57 @@ function SessionComplete({ got, learning, total, onRepeat, onDone }) {
 
 // ───────────────────────── QUIZ ─────────────────────────
 function QuizSession({ quiz, saved, config, onAnswer, onSave, onClear, onExit }) {
+  // `correct` is a string for single-answer or a string[] for multiple-response.
   const [qs] = React.useState(() =>
     (saved && saved.qs) || U.shuffle(quiz.questions).map((item) => ({
       q: item.q,
       opts: U.shuffle(item.options),
       correct: item.correct,
+      multi: Array.isArray(item.correct),
       explain: item.explain,
+      diff: item.diff,
     }))
   );
   const [qi, setQi] = React.useState(saved ? saved.qi : 0);
-  const [sel, setSel] = React.useState(null);
+  const [picked, setPicked] = React.useState([]); // selected option texts
+  const [submitted, setSubmitted] = React.useState(false);
   const [score, setScore] = React.useState(saved ? saved.score : 0);
   const q = qs[qi];
-  const answered = sel !== null;
   const done = qi >= qs.length;
+  const isMulti = q && (q.multi || Array.isArray(q.correct));
+  const dm = q && q.diff ? U.diffMeta(q.diff) : null;
 
   // persist a stable starting order on a fresh quiz
   React.useEffect(() => {
     if (!saved && qi < qs.length) onSave({ qs, qi: 0, score: 0 });
   }, []);
 
-  function choose(opt) {
-    if (answered) return;
-    const correct = opt === q.correct;
-    setSel(opt);
+  // multiple-response is graded all-or-nothing — the exact set must match
+  const isCorrectOpt = (opt) => isMulti ? q.correct.includes(opt) : opt === q.correct;
+  function gradePicked(p) {
+    if (isMulti) return p.length === q.correct.length && q.correct.every((x) => p.includes(x));
+    return p[0] === q.correct;
+  }
+  function commit(p) {
+    setSubmitted(true);
+    const correct = gradePicked(p);
     if (correct) setScore((s) => s + 1);
     onAnswer(correct);
+  }
+  function choose(opt) {
+    if (submitted) return;
+    if (isMulti) setPicked((p) => p.includes(opt) ? p.filter((x) => x !== opt) : [...p, opt]);
+    else { setPicked([opt]); commit([opt]); }
+  }
+  function submitMulti() {
+    if (submitted || !picked.length) return;
+    commit(picked);
   }
   function next() {
     const nq = qi + 1;
     const nScore = score; // score already reflects the answered question
-    setSel(null);
+    setPicked([]);
+    setSubmitted(false);
     setQi(nq);
     if (nq >= qs.length) onClear();
     else onSave({ qs, qi: nq, score: nScore });
@@ -172,8 +192,10 @@ function QuizSession({ quiz, saved, config, onAnswer, onSave, onClear, onExit })
     function onKey(e) {
       if (done) return;
       if (e.key === "Escape") return onExit();
-      if (!answered && q && /^[1-4]$/.test(e.key)) { const o = q.opts[+e.key - 1]; if (o) choose(o); }
-      else if (answered && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); next(); }
+      if (!submitted) {
+        if (/^[1-9]$/.test(e.key)) { const o = q.opts[+e.key - 1]; if (o) choose(o); }
+        else if (isMulti && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); submitMulti(); }
+      } else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); next(); }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -207,6 +229,7 @@ function QuizSession({ quiz, saved, config, onAnswer, onSave, onClear, onExit })
     );
   }
 
+  const wasCorrect = submitted && gradePicked(picked);
   return (
     <div className="study">
       <div className="study-top" />
@@ -217,39 +240,51 @@ function QuizSession({ quiz, saved, config, onAnswer, onSave, onClear, onExit })
       </div>
       <div className="aif-scroll">
         <div className="quiz-prompt" key={"p" + qi}>
-          <div className="quiz-q-k" style={{ color: U.catInk(quiz.hue) }}>{quiz.name}</div>
+          <div className="quiz-q-row">
+            <div className="quiz-q-k" style={{ color: U.catInk(quiz.hue) }}>{quiz.name}</div>
+            {dm && <span className="diff-badge" style={{ background: U.catTint(dm.hue), color: U.catInk(dm.hue) }}>{dm.name}</span>}
+          </div>
           <div className="quiz-q">{q.q}</div>
+          {isMulti && <div className="quiz-multi-note">Select all that apply</div>}
         </div>
         <div className="quiz-opts">
           {q.opts.map((opt, n) => {
+            const sel = picked.includes(opt);
             let cls = "opt";
-            if (answered) {
-              if (opt === q.correct) cls += " correct";
-              else if (opt === sel) cls += " wrong";
+            if (submitted) {
+              if (isCorrectOpt(opt)) cls += " correct";
+              else if (sel) cls += " wrong";
               else cls += " dim";
-            }
+            } else if (sel) cls += " sel";
+            const showCheck = (submitted && isCorrectOpt(opt)) || (!submitted && isMulti && sel);
             return (
               <button key={opt} className={cls} onClick={() => choose(opt)}>
-                <span className="opt-k">{answered && opt === q.correct ? <Ic.check /> : "ABCD"[n]}</span>
+                <span className={"opt-k" + (isMulti ? " box" : "")}>{showCheck ? <Ic.check /> : "ABCDE"[n]}</span>
                 <span>{opt}</span>
               </button>
             );
           })}
         </div>
-        {answered && q.explain && (
+        {submitted && q.explain && (
           <div className="quiz-explain">
-            <span className="quiz-explain-k">{sel === q.correct ? "Correct" : "Answer"}</span>
+            <span className="quiz-explain-k">{wasCorrect ? "Correct" : "Answer"}</span>
             {q.explain}
           </div>
         )}
       </div>
-      {answered && (
+      {submitted ? (
         <button className="quiz-next" onClick={next}>
           {qi + 1 >= qs.length ? "See score" : "Next question"} <Ic.arrowR />
         </button>
-      )}
+      ) : isMulti ? (
+        <button className="quiz-next quiz-submit" onClick={submitMulti} disabled={!picked.length}>
+          {picked.length ? `Submit · ${picked.length} selected` : "Select answers"}
+        </button>
+      ) : null}
       <div className="kbd-hints">
-        {!answered ? <span><span className="kbd">1-4</span> choose</span> : <span><span className="kbd">enter</span> next</span>}
+        {submitted ? <span><span className="kbd">enter</span> next</span>
+          : isMulti ? <span><span className="kbd">1-{q.opts.length}</span> toggle&nbsp;·&nbsp;<span className="kbd">enter</span> submit</span>
+          : <span><span className="kbd">1-{q.opts.length}</span> choose</span>}
       </div>
       <div className="aif-bottom-safe" />
     </div>
