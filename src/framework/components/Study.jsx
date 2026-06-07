@@ -7,31 +7,55 @@ import { U } from '../lib/u.js'
 import { Flashcard } from './Flashcard.jsx'
 
 // ───────────────────────── STUDY ─────────────────────────
-function StudySession({ queue, catMap, styleId, title, onGrade, onExit }) {
+function StudySession({ queue, catMap, styleId, title, onCommit, onExit }) {
   const [cards, setCards] = React.useState(queue);
+  // grades[i] is the final decision for cards[i]: undefined | true | false
+  const [grades, setGrades] = React.useState([]);
   const [idx, setIdx] = React.useState(0);
   const [flipped, setFlipped] = React.useState(false);
   const [exiting, setExiting] = React.useState(null);
-  const [misses, setMisses] = React.useState([]);
-  const [got, setGot] = React.useState(0);
   const lock = React.useRef(false);
+  const committed = React.useRef(false);
 
   const card = cards[idx];
   const done = idx >= cards.length;
+  const got = grades.filter((g) => g === true).length;
+  const missed = grades.filter((g) => g === false).length;
+
+  // A pass commits all its final grades at once, so changing a grade on revisit
+  // never double-counts a card. Fires once per pass (X, finish, or before repeat).
+  function commitPass() {
+    if (committed.current) return;
+    committed.current = true;
+    const results = [];
+    cards.forEach((c, i) => { if (grades[i] !== undefined) results.push({ cardId: c.id, correct: grades[i] }); });
+    onCommit(results);
+  }
+  function exit() { commitPass(); onExit(); }
+
+  React.useEffect(() => { if (done) commitPass(); }, [done]);
 
   function grade(correct) {
     if (lock.current || done) return;
     lock.current = true;
     setExiting(correct ? "r" : "l");
-    onGrade(card.id, correct);
-    if (correct) setGot((g) => g + 1);
-    else setMisses((m) => [...m, card]);
+    setGrades((g) => { const n = g.slice(); n[idx] = correct; return n; });
     setTimeout(() => {
       setExiting(null);
       setFlipped(false);
       setIdx((i) => i + 1);
       lock.current = false;
     }, 300);
+  }
+  function goPrev() {
+    if (lock.current || idx <= 0) return;
+    setFlipped(false);
+    setIdx((i) => i - 1);
+  }
+  function goNext() {
+    if (lock.current || done) return;
+    setFlipped(false);
+    setIdx((i) => i + 1);
   }
 
   // keyboard
@@ -41,18 +65,22 @@ function StudySession({ queue, catMap, styleId, title, onGrade, onExit }) {
       if (e.key === " " || e.key === "Enter") { e.preventDefault(); setFlipped((f) => !f); }
       else if (e.key === "ArrowRight") { e.preventDefault(); grade(true); }
       else if (e.key === "ArrowLeft") { e.preventDefault(); grade(false); }
-      else if (e.key === "Escape") onExit();
+      else if (e.key === "Escape") exit();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
 
   if (done) {
+    const missedCards = cards.filter((_, i) => grades[i] === false);
     return (
       <SessionComplete
-        got={got} learning={misses.length} total={cards.length}
-        onRepeat={misses.length ? () => { setCards(U.shuffle(misses)); setIdx(0); setGot(0); setMisses([]); setFlipped(false); } : null}
-        onDone={onExit}
+        got={got} learning={missed} total={got + missed}
+        onRepeat={missedCards.length ? () => {
+          setCards(U.shuffle(missedCards)); setGrades([]); setIdx(0); setFlipped(false);
+          committed.current = false;
+        } : null}
+        onDone={exit}
       />
     );
   }
@@ -61,7 +89,7 @@ function StudySession({ queue, catMap, styleId, title, onGrade, onExit }) {
     <div className="study">
       <div className="study-top" />
       <div className="study-bar">
-        <button className="study-x" onClick={onExit} aria-label="Close"><Ic.x /></button>
+        <button className="study-x" onClick={exit} aria-label="Close"><Ic.x /></button>
         <div className="prog-track"><i style={{ width: `${(idx / cards.length) * 100}%` }} /></div>
         <div className="study-count">{idx + 1}<span style={{ opacity: 0.5 }}>/{cards.length}</span></div>
       </div>
@@ -77,8 +105,12 @@ function StudySession({ queue, catMap, styleId, title, onGrade, onExit }) {
       </div>
 
       <div className="grade">
-        <button className="gbtn learn" onClick={() => grade(false)}>Still learning</button>
-        <button className="gbtn know" onClick={() => grade(true)}><Ic.check /> Got it</button>
+        <button className={"gbtn learn" + (grades[idx] === false ? " sel" : "")} onClick={() => grade(false)}>Still learning</button>
+        <button className={"gbtn know" + (grades[idx] === true ? " sel" : "")} onClick={() => grade(true)}><Ic.check /> Got it</button>
+      </div>
+      <div className="nav-row">
+        <button className="nav-btn" onClick={goPrev} disabled={idx <= 0}><Ic.back /> Previous</button>
+        <button className="nav-btn fwd" onClick={goNext}>{idx + 1 >= cards.length ? "Finish" : "Next"} <Ic.fwd /></button>
       </div>
       <div className="kbd-hints">
         <span><span className="kbd">space</span> flip</span>
@@ -131,7 +163,7 @@ function SessionComplete({ got, learning, total, onRepeat, onDone }) {
 }
 
 // ───────────────────────── QUIZ ─────────────────────────
-function QuizSession({ quiz, saved, config, onAnswer, onSave, onClear, onExit }) {
+function QuizSession({ quiz, saved, config, onFinish, onSave, onClear, onExit }) {
   // `correct` is a string for single-answer or a string[] for multiple-response.
   const [qs] = React.useState(() =>
     (saved && saved.qs) || U.shuffle(quiz.questions).map((item) => ({
@@ -144,58 +176,77 @@ function QuizSession({ quiz, saved, config, onAnswer, onSave, onClear, onExit })
     }))
   );
   const [qi, setQi] = React.useState(saved ? saved.qi : 0);
-  const [picked, setPicked] = React.useState([]); // selected option texts
-  const [submitted, setSubmitted] = React.useState(false);
-  const [score, setScore] = React.useState(saved ? saved.score : 0);
+  // answers[i] holds the decision for qs[i]: { picked: string[], submitted: bool } or null
+  const [answers, setAnswers] = React.useState(() => (saved && saved.answers) || []);
+  const finished = React.useRef(false);
+
   const q = qs[qi];
   const done = qi >= qs.length;
+  const a = done ? null : answers[qi];
+  const picked = a ? a.picked : [];
+  const submitted = a ? a.submitted : false;
   const isMulti = q && (q.multi || Array.isArray(q.correct));
   const dm = q && q.diff ? U.diffMeta(q.diff) : null;
 
-  // persist a stable starting order on a fresh quiz
-  React.useEffect(() => {
-    if (!saved && qi < qs.length) onSave({ qs, qi: 0, score: 0 });
-  }, []);
-
   // multiple-response is graded all-or-nothing — the exact set must match
   const isCorrectOpt = (opt) => isMulti ? q.correct.includes(opt) : opt === q.correct;
-  function gradePicked(p) {
-    if (isMulti) return p.length === q.correct.length && q.correct.every((x) => p.includes(x));
-    return p[0] === q.correct;
+  function isAnsCorrect(qq, p) {
+    if (Array.isArray(qq.correct)) return p.length === qq.correct.length && qq.correct.every((x) => p.includes(x));
+    return p[0] === qq.correct;
   }
-  function commit(p) {
-    setSubmitted(true);
-    const correct = gradePicked(p);
-    if (correct) setScore((s) => s + 1);
-    onAnswer(correct);
+  const gradePicked = (p) => isAnsCorrect(q, p);
+
+  // score and answered count are derived, so edits and skips stay consistent
+  const score = answers.reduce((s, ans, i) => (ans && ans.submitted && isAnsCorrect(qs[i], ans.picked) ? s + 1 : s), 0);
+  const answeredCount = answers.filter((x) => x && x.submitted).length;
+
+  // persist a stable starting order on a fresh quiz
+  React.useEffect(() => {
+    if (!saved) onSave({ qs, qi: 0, answers: [] });
+  }, []);
+
+  // commit lifetime accuracy once, when the quiz is completed
+  React.useEffect(() => {
+    if (done && !finished.current) {
+      finished.current = true;
+      onFinish({ correct: score, total: answeredCount });
+      onClear();
+    }
+  }, [done]);
+
+  function writeAnswer(entry) {
+    const next = answers.slice();
+    next[qi] = entry;
+    setAnswers(next);
+    onSave({ qs, qi, answers: next });
   }
   function choose(opt) {
-    if (submitted) return;
-    if (isMulti) setPicked((p) => p.includes(opt) ? p.filter((x) => x !== opt) : [...p, opt]);
-    else { setPicked([opt]); commit([opt]); }
+    if (isMulti) writeAnswer({ picked: picked.includes(opt) ? picked.filter((x) => x !== opt) : [...picked, opt], submitted: false });
+    else writeAnswer({ picked: [opt], submitted: true });
   }
   function submitMulti() {
     if (submitted || !picked.length) return;
-    commit(picked);
+    writeAnswer({ picked, submitted: true });
   }
-  function next() {
-    const nq = qi + 1;
-    const nScore = score; // score already reflects the answered question
-    setPicked([]);
-    setSubmitted(false);
-    setQi(nq);
-    if (nq >= qs.length) onClear();
-    else onSave({ qs, qi: nq, score: nScore });
+  function navTo(pos) {
+    setQi(pos);
+    if (pos < qs.length) onSave({ qs, qi: pos, answers });
   }
+  function goPrev() { if (qi > 0) navTo(qi - 1); }
+  function goNext() { navTo(qi + 1); } // skip-ahead allowed; past the last question ends the quiz
 
   React.useEffect(() => {
     function onKey(e) {
       if (done) return;
       if (e.key === "Escape") return onExit();
-      if (!submitted) {
-        if (/^[1-9]$/.test(e.key)) { const o = q.opts[+e.key - 1]; if (o) choose(o); }
-        else if (isMulti && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); submitMulti(); }
-      } else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); next(); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); return goPrev(); }
+      if (e.key === "ArrowRight") { e.preventDefault(); return goNext(); }
+      if (/^[1-9]$/.test(e.key)) { const o = q.opts[+e.key - 1]; if (o) choose(o); }
+      else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (isMulti && !submitted && picked.length) submitMulti();
+        else goNext();
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -272,19 +323,19 @@ function QuizSession({ quiz, saved, config, onAnswer, onSave, onClear, onExit })
           </div>
         )}
       </div>
-      {submitted ? (
-        <button className="quiz-next" onClick={next}>
-          {qi + 1 >= qs.length ? "See score" : "Next question"} <Ic.arrowR />
-        </button>
-      ) : isMulti ? (
+      {isMulti && !submitted && (
         <button className="quiz-next quiz-submit" onClick={submitMulti} disabled={!picked.length}>
           {picked.length ? `Submit · ${picked.length} selected` : "Select answers"}
         </button>
-      ) : null}
+      )}
+      <div className="nav-row">
+        <button className="nav-btn" onClick={goPrev} disabled={qi <= 0}><Ic.back /> Previous</button>
+        <button className="nav-btn fwd" onClick={goNext}>{qi + 1 >= qs.length ? "See score" : "Next"} <Ic.fwd /></button>
+      </div>
       <div className="kbd-hints">
-        {submitted ? <span><span className="kbd">enter</span> next</span>
-          : isMulti ? <span><span className="kbd">1-{q.opts.length}</span> toggle&nbsp;·&nbsp;<span className="kbd">enter</span> submit</span>
-          : <span><span className="kbd">1-{q.opts.length}</span> choose</span>}
+        <span><span className="kbd">1-{q.opts.length}</span> {isMulti ? "toggle" : "choose"}</span>
+        {isMulti && !submitted && <span><span className="kbd">enter</span> submit</span>}
+        <span><span className="kbd">←</span>/<span className="kbd">→</span> prev/next</span>
       </div>
       <div className="aif-bottom-safe" />
     </div>

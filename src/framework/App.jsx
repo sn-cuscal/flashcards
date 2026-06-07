@@ -55,20 +55,25 @@ export function App({ config, data, quiz }) {
   }
 
   // ---- grading (study + quiz share SR update) ----
-  function gradeCard(cardId, correct) {
-    setS((st) => {
-      let next = withStreak(st);
-      const rec = U.gradeRec(next.progress[cardId], correct, next.session);
-      return { ...next, progress: { ...next.progress, [cardId]: rec }, reviews: next.reviews + 1 };
-    });
-  }
-  function quizAnswer(correct) {
+  // A study pass commits all its final grades at once, so revisiting and
+  // changing a grade mid-pass can't double-count a card.
+  function commitCards(results) {
+    if (!results.length) return;
     setS((st) => {
       const next = withStreak(st);
-      return {
-        ...next,
-        quiz: { correct: next.quiz.correct + (correct ? 1 : 0), total: next.quiz.total + 1 },
-      };
+      const progress = { ...next.progress };
+      for (const { cardId, correct } of results) {
+        progress[cardId] = U.gradeRec(progress[cardId], correct, next.session);
+      }
+      return { ...next, progress, reviews: next.reviews + results.length };
+    });
+  }
+  // A quiz commits its accuracy once on completion, for the same reason.
+  function quizFinish({ correct, total }) {
+    if (!total) return;
+    setS((st) => {
+      const next = withStreak(st);
+      return { ...next, quiz: { correct: next.quiz.correct + correct, total: next.quiz.total + total } };
     });
   }
 
@@ -141,10 +146,10 @@ export function App({ config, data, quiz }) {
     if (session.type === "study")
       return <StudySession
         queue={session.queue} catMap={catMap} styleId={S.styleId} title={session.title}
-        onGrade={gradeCard} onExit={() => setSession(null)} />;
+        onCommit={commitCards} onExit={() => setSession(null)} />;
     return <QuizSession
       quiz={session.quiz} saved={session.saved} config={config}
-      onAnswer={quizAnswer}
+      onFinish={quizFinish}
       onSave={(qd) => saveQuiz(session.quiz.id, qd)}
       onClear={() => clearQuiz(session.quiz.id)}
       onExit={() => setSession(null)} />;
@@ -211,6 +216,8 @@ function QuizPicker({ cats, onPick, stats, progress, onReset, diff, onDiff }) {
         {cats.map((cat) => {
           const p = progress[cat.id];
           const resuming = p && p.qi > 0 && p.qi < p.qs.length;
+          // skip-ahead means qi is a position, not a count, so tally submitted answers
+          const answered = p ? (p.answers ? p.answers.filter((a) => a && a.submitted).length : p.qi) : 0;
           const n = countFor(cat);
           // a resumable quiz stays openable even if the filter would hide its set
           const empty = n === 0 && !resuming;
@@ -220,11 +227,11 @@ function QuizPicker({ cats, onPick, stats, progress, onReset, diff, onDiff }) {
               <div className="deck-meta">
                 <h4>{cat.name}</h4>
                 {resuming
-                  ? <p style={{ color: U.catInk(cat.hue), fontWeight: 600 }}>Resume · {p.qi}/{p.qs.length} answered</p>
+                  ? <p style={{ color: U.catInk(cat.hue), fontWeight: 600 }}>Resume · {answered}/{p.qs.length} answered</p>
                   : <p>{empty ? "No questions at this level" : cat.blurb}</p>}
                 {resuming && (
                   <div className="deck-bar" style={{ marginTop: 8 }}>
-                    <i style={{ width: `${(p.qi / p.qs.length) * 100}%`, background: U.catSolid(cat.hue) }} />
+                    <i style={{ width: `${(answered / p.qs.length) * 100}%`, background: U.catSolid(cat.hue) }} />
                   </div>
                 )}
               </div>

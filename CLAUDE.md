@@ -49,7 +49,7 @@ beside the column on desktop. `index.html` is just the host page (fonts +
 - `lib/spacedRepetition.js` — Leitner-style scheduling (`gradeRec`, `reviewQueue`, …). `gradeRec` marks a card `status: "known"` (= mastered) at `box >= 2`; every progress/mastery/due counter keys off `status === "known"`.
 - `lib/u.js` — re-exports the above as a single `U` namespace; components call `U.x`. Also owns the difficulty axis: `U.DIFFS`, `U.diffMeta(id)`, `U.filterDiff(items, diff)`.
 - `components/icons.jsx` — the `Ic` icon set.
-- `components/Ring.jsx`, `DesktopShell.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`. `Study.jsx`'s `QuizSession` renders single-answer and multiple-response questions (checkbox toggles + Submit, all-or-nothing). `Home.jsx` exports the shared `DiffFilter` (All / Easy / Intermediate / Advanced) used on the Cards and Quiz screens; the Cards screen orders its blocks header → difficulty filter → decks → Smart Review → mastery band.
+- `components/Ring.jsx`, `DesktopShell.jsx`, `Flashcard.jsx`, `Study.jsx`, `Home.jsx`. `Study.jsx`'s `QuizSession` renders single-answer and multiple-response questions (checkbox toggles + Submit, all-or-nothing). Both `StudySession` and `QuizSession` have a `.nav-row` with `Previous`/`Next` buttons: free back/forward navigation, editable revisits (re-grade a card / re-answer a question) and skip-ahead. To keep edits from double-counting, a study pass holds its grades locally and commits them once via `onCommit` (on finish/exit), and the quiz commits accuracy once via `onFinish` (on completion); the quiz score is derived from its `answers` array, not a running counter. `Home.jsx` exports the shared `DiffFilter` (All / Easy / Intermediate / Advanced) used on the Cards and Quiz screens; the Cards screen orders its blocks header → difficulty filter → decks → Smart Review → mastery band.
 - `App.jsx` — state, persistence, tab routing. `createApp.jsx` — entry (mounts `App` into `#root`).
 - `styles.css` — component styles, the responsive shell, and reduced-motion fallbacks (page/session/flip transitions degrade to opacity-only fades).
 
@@ -87,7 +87,9 @@ Card progress, streak, quiz score, in-progress quiz resume, card style, and the
 selected difficulty filter (`diffFilter`) are saved to `localStorage` under
 `config.storeKey` and restored on load — state survives reloads and browser
 restarts. The difficulty filter scopes Smart Review, decks and quiz draws; a
-saved in-progress quiz resumes its exact snapshot regardless of the filter. The logic is in `App.jsx` (`load()` and
+saved in-progress quiz resumes its exact snapshot regardless of the filter — the
+snapshot is `{ qs, qi, answers }` (per-question `answers`, so back-navigation
+restores each prior answer; the score is derived from it, not stored). The logic is in `App.jsx` (`load()` and
 the persistence `useEffect`). `load()` runs `migrate()`, which recomputes each
 record's `status` from its `box` (lossless — boxes, due dates and seen counts
 are kept), so saved progress always reflects the current mastery rule. Extend

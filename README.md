@@ -14,7 +14,7 @@ src/framework/            shared, exam-agnostic code (never copied per app)
     Ring.jsx              progress ring
     DesktopShell.jsx      responsive shell (mobile-first; desktop side panel)
     Flashcard.jsx         flip + swipe-to-grade card (shows a difficulty badge)
-    Study.jsx             study + quiz sessions (single-answer + multi-select)
+    Study.jsx             study + quiz sessions (back/forward nav; single-answer + multi-select)
     Home.jsx              home / stats / style screens, bottom nav, DiffFilter
   lib/
     theme.js              per-category colour helpers
@@ -38,9 +38,13 @@ Every card and quiz question carries a difficulty (`easy`, `intermediate` or
 `advanced`). A filter on the Cards and Quiz screens scopes study, Smart Review
 and quiz draws to one tier. Quiz questions support both single-answer and
 multiple-response: a question's `correct` is a string for single-answer or a
-string array for multiple-response (graded all-or-nothing). The Cards screen
-reads top to bottom as difficulty filter, decks, Smart Review, then the mastery
-summary.
+string array for multiple-response (graded all-or-nothing). Both card and quiz
+sessions support back/forward navigation (`Previous`/`Next`): you can return to
+an earlier card or question and change your grade/answer, or skip ahead to one
+you haven't done. Card grades commit when the pass ends and quiz accuracy when
+the quiz finishes, so revisiting and editing never double-counts. The Cards
+screen reads top to bottom as difficulty filter, decks, Smart Review, then the
+mastery summary.
 
 ## Develop
 
@@ -76,8 +80,9 @@ No framework code is touched.
 
 ## Persistence
 
-All per-user state — card progress, daily streak, quiz score, in-progress quiz
-resume, the chosen card style, and the selected difficulty filter — is stored in
+All per-user state — card progress, daily streak, quiz accuracy, in-progress
+quiz resume (each prior answer is restored, so back-navigation still works after
+a reload), the chosen card style, and the selected difficulty filter — is stored in
 the browser's `localStorage` under the app's `storeKey`. It persists across page reloads and browser
 restarts; a returning user keeps their progress. `localStorage` is scoped to
 the origin, so every app sharing a GitHub Pages origin must use a distinct
