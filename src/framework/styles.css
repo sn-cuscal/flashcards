@@ -60,7 +60,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 /* ───────────── header ───────────── */
 .hd { padding: 4px 22px 10px; }
-.hd-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+.hd-eyebrow { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
 .hd-title { font-size: 30px; font-weight: 800; letter-spacing: -0.03em; margin: 3px 0 0; line-height: 1.05; }
 .hd-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 
