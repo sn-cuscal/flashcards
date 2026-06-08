@@ -132,8 +132,8 @@ function StudySession({ queue, catMap, styleId, title, notes, onSaveNote, onComm
         <button className="nav-arrow" onClick={goNext} aria-label={idx + 1 >= cards.length ? "Finish" : "Next card"}><Ic.fwd /></button>
       </div>
       <div className="kbd-hints">
-        <span><span className="kbd">space</span> flip</span>
         <span><span className="kbd">←</span> learning</span>
+        <span><span className="kbd">space</span> flip</span>
         <span><span className="kbd">→</span> got it</span>
       </div>
       <div className="aif-bottom-safe" />
