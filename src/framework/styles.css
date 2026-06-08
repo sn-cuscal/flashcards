@@ -35,6 +35,10 @@
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* the app owns the whole viewport — stop the browser pull-to-refresh / overscroll
+   so a swipe-down on a card (to hide its note) never reloads the page */
+html, body { overscroll-behavior: none; }
+
 .aif-root {
   position: absolute; inset: 0; z-index: 0;
   background: var(--bg);
@@ -153,6 +157,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .study-count { font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); font-weight: 600; flex-shrink: 0; }
 
 .card-stage { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; padding: 10px 20px 0; }
+/* the card and its note share one squeeze wrapper, so the note flips in/out with
+   the card during the half-turn */
+.fc-squeeze { display: flex; flex-direction: column; align-items: center; width: 100%; transform-origin: center center; }
+
+/* generous pointer target around the card so flip / grade / note swipes
+   don't have to start precisely on the card. The note lives inside it and stops
+   its own pointer events bubbling so they aren't read as card swipes. */
+.fc-hit { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; width: 100%; padding: 12px 20px 0; }
 
 /* swipe ghost hints */
 .swipe-hint { position: absolute; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-weight: 700; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; padding: 9px 14px; border-radius: 12px; opacity: 0; transition: opacity .12s; pointer-events: none; z-index: 5; }
@@ -160,7 +172,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .swipe-hint.r { right: 26px; color: var(--good); border: 2px solid var(--good); transform: translateY(-50%) rotate(8deg); }
 
 /* the flip card (single face, half-turn) */
-.fc { position: relative; width: 100%; height: 100%; cursor: pointer; transform-origin: center center; }
+.fc { position: relative; z-index: 1; width: 100%; height: 100%; cursor: pointer; transform-origin: center center; }
 .fc-face { position: relative; width: 100%; height: 100%; border-radius: var(--r-lg); display: flex; flex-direction: column; overflow: hidden; }
 
 .fc-chip { display: inline-flex; align-items: center; gap: 7px; align-self: flex-start; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 7px 11px; border-radius: 999px; }
@@ -219,8 +231,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .st-tinted .fc-use-btn { background: rgba(255,255,255,0.5); border-color: transparent; }
 .st-tinted .fc-use-btn.active { background: #fff; color: var(--accent-d); }
 
-/* grade buttons */
-.grade { display: flex; gap: 12px; padding: 16px 20px 8px; flex-shrink: 0; }
+/* grade buttons (flanked by the small prev/next arrows) */
+.grade { display: flex; align-items: center; gap: 10px; padding: 16px 20px 8px; flex-shrink: 0; }
 .gbtn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 9px; height: 58px; border-radius: 18px; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; transition: transform .1s ease, opacity .2s; }
 .gbtn:active { transform: scale(0.96); }
 .gbtn.learn { background: var(--warn-soft); color: oklch(0.46 0.10 52); }
@@ -229,15 +241,53 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .gbtn small { font-family: var(--mono); font-weight: 500; opacity: 0.55; font-size: 11px; }
 .gbtn.sel { box-shadow: inset 0 0 0 2px currentColor; }
 
-.nav-row { display: flex; gap: 12px; padding: 8px 20px 4px; flex-shrink: 0; }
-.nav-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; height: 46px; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-soft); font-size: 14px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink-2); transition: transform .1s ease, opacity .2s; }
-.nav-btn:active { transform: scale(0.97); }
-.nav-btn:disabled { opacity: 0.35; }
-.nav-btn.fwd { background: var(--ink); color: var(--bg); }
+/* small prev/next arrows — beside the study grade buttons, and the quiz row */
+.nav-arrow { width: 46px; height: 46px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-soft); color: var(--ink-2); transition: transform .1s ease, opacity .2s; }
+.nav-arrow:active { transform: scale(0.94); }
+.nav-arrow:disabled { opacity: 0.35; }
+
+/* quiz nav: arrows centred, with the multi-select Submit between them */
+.nav-row.quiz-nav { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px 20px 4px; flex-shrink: 0; }
 
 .kbd-hints { display: flex; justify-content: center; gap: 16px; padding: 2px 20px 6px; flex-shrink: 0; }
 .kbd-hints span { font-size: 11px; color: var(--ink-3); display: inline-flex; align-items: center; gap: 5px; }
 .kbd { font-family: var(--mono); font-size: 10.5px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; color: var(--ink-2); min-width: 18px; text-align: center; }
+
+/* ───────────── card note ─────────────
+   A drawer tucked just below the revealed card. Collapsed it shows only a tiny
+   tip peeking beneath the card (no text, no grip); opening animates an explicit
+   `height` and fades in the textarea and the bottom grip. The visible drawer sits
+   inside a roomy transparent `.note-hit` (padding below + beside it) that owns the
+   gestures, so opening/closing never needs a precise tap. `.note-spacer` reserves
+   the collapsed hit height on the card front so flipping doesn't shift the card. */
+.note-hit,
+.note-spacer { width: 100%; align-self: center; margin-top: -6px; }
+.note-hit { display: flex; flex-direction: column; align-items: center; padding: 0 0 26px; box-sizing: border-box; touch-action: none; cursor: pointer; }
+.note-hit.open { padding-bottom: 12px; }
+.note-spacer { height: 44px; }
+.note-card {
+  z-index: 0; width: calc(100% - 40px); display: flex; flex-direction: column; overflow: hidden; height: 18px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(40,38,34,0.10);
+  transition: height .34s cubic-bezier(.22,.61,.36,1), box-shadow .34s ease;
+}
+.note-card.open { height: 192px; box-shadow: 0 14px 32px rgba(40,38,34,0.16); }
+/* the collapsed tip carries a subtle hue when a note exists, but never its text */
+.note-card.has-note:not(.open) { background: oklch(0.972 0.038 var(--note-hue, 200)); border-color: oklch(0.88 0.05 var(--note-hue, 200)); }
+.note-ta {
+  flex: 1; min-height: 0; width: 100%; resize: none; box-sizing: border-box;
+  border: none; padding: 12px 16px 4px; font-family: inherit; font-size: 14.5px;
+  line-height: 1.42; color: var(--ink); background: transparent; outline: none;
+  pointer-events: none; touch-action: none; opacity: 0; transition: opacity .18s ease;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.note-card.open .note-ta { pointer-events: auto; opacity: 1; }
+.note-ta::placeholder { color: var(--ink-3); }
+.note-ta::-webkit-scrollbar { display: none; }
+/* grip handle sits at the bottom of the open drawer; tap it to slide it back up */
+.note-grip { width: 38px; height: 5px; border-radius: 99px; background: var(--line); margin: 4px auto 9px; flex-shrink: 0; opacity: 0; transition: opacity .18s ease; }
+.note-card.open .note-grip { opacity: 1; }
+.note-card.open.has-note .note-grip { background: oklch(0.74 0.09 var(--note-hue, 200)); }
 
 /* ───────────── session complete ───────────── */
 .done-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 30px; text-align: center; }
@@ -265,8 +315,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .opt.wrong .opt-k { background: oklch(0.62 0.15 28); color: #fff; }
 .opt.dim { opacity: 0.5; }
 
-.quiz-next { margin: 6px 18px; height: 56px; border-radius: 18px; background: var(--ink); color: var(--bg); font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 9px; transition: transform .1s; }
-.quiz-next:active { transform: scale(0.98); }
 .quiz-explain { margin: 4px 18px 2px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; font-size: 14px; line-height: 1.4; color: var(--ink-2); box-shadow: var(--shadow-soft); }
 .quiz-explain-k { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-d); margin-bottom: 5px; }
 
@@ -356,7 +404,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .opt.sel { border-color: var(--accent); background: var(--accent-soft); }
 .opt.sel .opt-k { background: var(--accent); color: #fff; }
 .opt-k.box { border-radius: 8px; }
-.quiz-submit { background: var(--accent); color: #fff; }
+.quiz-submit { height: 46px; padding: 0 18px; border-radius: 14px; background: var(--accent); color: #fff; font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform .1s ease, opacity .2s; }
+.quiz-submit:active { transform: scale(0.97); }
 .quiz-submit:disabled { opacity: 0.45; }
 
 /* decks / CTA disabled when the active difficulty hides their cards */

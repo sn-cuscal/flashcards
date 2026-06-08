@@ -14,7 +14,7 @@ src/framework/            shared, exam-agnostic code (never copied per app)
     Ring.jsx              progress ring
     DesktopShell.jsx      responsive shell (mobile-first; desktop side panel)
     Flashcard.jsx         flip + swipe-to-grade card (shows a difficulty badge)
-    Study.jsx             study + quiz sessions (back/forward nav; single-answer + multi-select)
+    Study.jsx             study + quiz sessions (back/forward nav; single-answer + multi-select; per-card notes)
     Home.jsx              home / stats / style screens, bottom nav, DiffFilter
   lib/
     theme.js              per-category colour helpers
@@ -45,6 +45,11 @@ you haven't done. Card grades commit when the pass ends and quiz accuracy when
 the quiz finishes, so revisiting and editing never double-counts. The Cards
 screen reads top to bottom as difficulty filter, decks, Smart Review, then the
 mastery summary.
+
+Each revealed card has a note drawer tucked beneath it. Collapsed it shows only
+a small tip; swipe down (from the card or the drawer) or tap the tip to open it
+and type, and swipe up or tap its handle to close. Notes are per card and
+autosave as you type.
 
 ## Develop
 
@@ -82,7 +87,8 @@ No framework code is touched.
 
 All per-user state — card progress, daily streak, quiz accuracy, in-progress
 quiz resume (each prior answer is restored, so back-navigation still works after
-a reload), the chosen card style, and the selected difficulty filter — is stored in
+a reload), per-card notes, the chosen card style, and the selected difficulty
+filter — is stored in
 the browser's `localStorage` under the app's `storeKey`. It persists across page reloads and browser
 restarts; a returning user keeps their progress. `localStorage` is scoped to
 the origin, so every app sharing a GitHub Pages origin must use a distinct

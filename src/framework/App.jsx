@@ -9,7 +9,7 @@ import { StudySession, QuizSession } from './components/Study.jsx'
 const DEFAULT = {
   progress: {}, streak: 0, lastDate: null, session: 1,
   reviews: 0, quiz: { correct: 0, total: 0 }, quizProgress: {},
-  styleId: "minimal", shuffleOn: true, diffFilter: "all",
+  notes: {}, styleId: "minimal", shuffleOn: true, diffFilter: "all",
 };
 
 // Saved progress predates the box>=2 mastery rule (it was box>=4), so stored
@@ -74,6 +74,15 @@ export function App({ config, data, quiz }) {
     setS((st) => {
       const next = withStreak(st);
       return { ...next, quiz: { correct: next.quiz.correct + correct, total: next.quiz.total + total } };
+    });
+  }
+
+  // ---- per-card notes (saved immediately; empty text clears the note) ----
+  function saveNote(cardId, text) {
+    setS((st) => {
+      const notes = { ...st.notes };
+      if (text) notes[cardId] = text; else delete notes[cardId];
+      return { ...st, notes };
     });
   }
 
@@ -146,6 +155,7 @@ export function App({ config, data, quiz }) {
     if (session.type === "study")
       return <StudySession
         queue={session.queue} catMap={catMap} styleId={S.styleId} title={session.title}
+        notes={S.notes} onSaveNote={saveNote}
         onCommit={commitCards} onExit={() => setSession(null)} />;
     return <QuizSession
       quiz={session.quiz} saved={session.saved} config={config}

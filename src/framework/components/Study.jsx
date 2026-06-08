@@ -7,13 +7,15 @@ import { U } from '../lib/u.js'
 import { Flashcard } from './Flashcard.jsx'
 
 // ───────────────────────── STUDY ─────────────────────────
-function StudySession({ queue, catMap, styleId, title, onCommit, onExit }) {
+function StudySession({ queue, catMap, styleId, title, notes, onSaveNote, onCommit, onExit }) {
   const [cards, setCards] = React.useState(queue);
   // grades[i] is the final decision for cards[i]: undefined | true | false
   const [grades, setGrades] = React.useState([]);
   const [idx, setIdx] = React.useState(0);
   const [flipped, setFlipped] = React.useState(false);
   const [exiting, setExiting] = React.useState(null);
+  // note: sits below the revealed card, collapsed to a peek by default
+  const [noteOpen, setNoteOpen] = React.useState(false);
   const lock = React.useRef(false);
   const committed = React.useRef(false);
 
@@ -34,6 +36,11 @@ function StudySession({ queue, catMap, styleId, title, onCommit, onExit }) {
   function exit() { commitPass(); onExit(); }
 
   React.useEffect(() => { if (done) commitPass(); }, [done]);
+
+  // the note belongs to one revealed card — collapse when the card changes or is
+  // flipped back to its front
+  React.useEffect(() => { setNoteOpen(false); }, [idx]);
+  React.useEffect(() => { if (!flipped) setNoteOpen(false); }, [flipped]);
 
   function grade(correct) {
     if (lock.current || done) return;
@@ -62,6 +69,8 @@ function StudySession({ queue, catMap, styleId, title, onCommit, onExit }) {
   React.useEffect(() => {
     function onKey(e) {
       if (done) return;
+      // while typing a note, let the textarea own every key (space, arrows, etc.)
+      if (/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) return;
       if (e.key === " " || e.key === "Enter") { e.preventDefault(); setFlipped((f) => !f); }
       else if (e.key === "ArrowRight") { e.preventDefault(); grade(true); }
       else if (e.key === "ArrowLeft") { e.preventDefault(); grade(false); }
@@ -94,23 +103,33 @@ function StudySession({ queue, catMap, styleId, title, onCommit, onExit }) {
         <div className="study-count">{idx + 1}<span style={{ opacity: 0.5 }}>/{cards.length}</span></div>
       </div>
 
-      <div className="card-stage" style={{ position: "relative" }}>
+      <div className="card-stage">
         <Flashcard
           key={card.id}
           card={card} cat={catMap[card.cat]} styleId={styleId}
           flipped={flipped} exiting={exiting}
           onFlip={() => setFlipped((f) => !f)}
           onGrade={grade}
+          canNote={flipped}
+          onNoteSwipe={(dir) => setNoteOpen(dir === "down")}
+          note={
+            <NoteDrawer
+              open={noteOpen}
+              text={(notes && notes[card.id]) || ""}
+              hue={catMap[card.cat].hue}
+              onOpen={() => setNoteOpen(true)}
+              onClose={() => setNoteOpen(false)}
+              onChange={(t) => onSaveNote(card.id, t)}
+            />
+          }
         />
       </div>
 
       <div className="grade">
+        <button className="nav-arrow" onClick={goPrev} disabled={idx <= 0} aria-label="Previous card"><Ic.back /></button>
         <button className={"gbtn learn" + (grades[idx] === false ? " sel" : "")} onClick={() => grade(false)}>Still learning</button>
         <button className={"gbtn know" + (grades[idx] === true ? " sel" : "")} onClick={() => grade(true)}><Ic.check /> Got it</button>
-      </div>
-      <div className="nav-row">
-        <button className="nav-btn" onClick={goPrev} disabled={idx <= 0}><Ic.back /> Previous</button>
-        <button className="nav-btn fwd" onClick={goNext}>{idx + 1 >= cards.length ? "Finish" : "Next"} <Ic.fwd /></button>
+        <button className="nav-arrow" onClick={goNext} aria-label={idx + 1 >= cards.length ? "Finish" : "Next card"}><Ic.fwd /></button>
       </div>
       <div className="kbd-hints">
         <span><span className="kbd">space</span> flip</span>
@@ -118,6 +137,97 @@ function StudySession({ queue, catMap, styleId, title, onCommit, onExit }) {
         <span><span className="kbd">→</span> got it</span>
       </div>
       <div className="aif-bottom-safe" />
+    </div>
+  );
+}
+
+// A note that sits just below the revealed card, collapsed to a tiny tip that
+// peeks out underneath it (no content shown until it's opened). Swipe down on the
+// card (handled in Flashcard), or drag/tap the tip, expands it; tapping it again
+// (or swiping up / tapping the bottom grip) slides it back up. The textarea is
+// always mounted but hidden while collapsed; the open/close height animates
+// smoothly. It saves on every keystroke (no explicit save).
+function NoteDrawer({ open, text, hue, onOpen, onClose, onChange }) {
+  const [draft, setDraft] = React.useState(text || "");
+  const taRef = React.useRef(null);
+  const wantFocus = React.useRef(false);
+  const start = React.useRef(null);
+  const moved = React.useRef(0);
+  const hasNote = !!(text && text.trim());
+
+  // reseed from the stored note (e.g. on first open for this card)
+  React.useEffect(() => { setDraft(text || ""); }, [text]);
+  // focus the field only when the tip was tapped (not on a swipe-reveal); blur
+  // whenever it closes so the mobile keyboard dismisses with the drawer
+  React.useEffect(() => {
+    if (open) {
+      if (wantFocus.current && taRef.current) {
+        const el = taRef.current; el.focus();
+        const n = el.value.length; el.setSelectionRange(n, n);
+        wantFocus.current = false;
+      }
+    } else {
+      taRef.current?.blur();
+    }
+  }, [open]);
+
+  function edit(e) { setDraft(e.target.value); onChange(e.target.value.trim()); }
+
+  // Gestures live on a roomy hit wrapper (`.note-hit`) so opening/closing never
+  // needs a precise tap. A clear vertical drag — started on the card chrome OR
+  // the note (incl. the textarea) — toggles open/close; a tap on the collapsed
+  // tip opens, a tap on the open drawer's chrome closes, and a tap on the
+  // textarea just types. The note sits inside the card's pointer-capturing hit
+  // area, so stop these events bubbling or the card reads them as a flip/grade.
+  function down(e) {
+    e.stopPropagation();
+    const onTextarea = open && e.target.tagName === "TEXTAREA";
+    start.current = { y: e.clientY, t: Date.now(), ta: onTextarea, captured: false };
+    moved.current = 0;
+    // capture immediately for chrome/tip gestures; for the textarea stay native
+    // (so a tap places the caret) until a swipe clearly commits (see move)
+    if (!onTextarea) { e.currentTarget.setPointerCapture?.(e.pointerId); start.current.captured = true; }
+  }
+  function move(e) {
+    e.stopPropagation();
+    if (!start.current) return;
+    const dy = e.clientY - start.current.y;
+    moved.current = Math.max(moved.current, Math.abs(dy));
+    // once a vertical swipe is clear, take the pointer from the textarea so it
+    // stops selecting text as the finger drags
+    if (start.current.ta && !start.current.captured && Math.abs(dy) > 16) {
+      start.current.captured = true;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    }
+  }
+  function up(e) {
+    e.stopPropagation();
+    if (start.current == null) return;
+    const dy = e.clientY - start.current.y;
+    const quick = Date.now() - start.current.t < 280;
+    const m = moved.current;
+    const onTextarea = start.current.ta;
+    start.current = null;
+    // a clear vertical swipe toggles, from anywhere on the note or its chrome
+    if (dy < -40 || (quick && dy < -25)) { onClose(); return; }
+    if (dy > 40 || (quick && dy > 25)) { onOpen(); return; }
+    // otherwise it's a tap
+    if (m >= 9) return;
+    if (!open) { wantFocus.current = true; onOpen(); }
+    else if (!onTextarea) onClose();
+    // tap on the textarea while open: leave it to native focus/caret
+  }
+
+  return (
+    <div className={"note-hit" + (open ? " open" : "")} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+      <div className={"note-card" + (open ? " open" : "") + (hasNote ? " has-note" : "")} style={{ "--note-hue": hue }} aria-label="Card note">
+        <textarea
+          ref={taRef} className="note-ta" value={draft}
+          placeholder={open ? "Write a note for this card…" : ""}
+          onChange={edit} tabIndex={open ? 0 : -1}
+        />
+        <span className="note-grip" />
+      </div>
     </div>
   );
 }
@@ -323,14 +433,14 @@ function QuizSession({ quiz, saved, config, onFinish, onSave, onClear, onExit })
           </div>
         )}
       </div>
-      {isMulti && !submitted && (
-        <button className="quiz-next quiz-submit" onClick={submitMulti} disabled={!picked.length}>
-          {picked.length ? `Submit · ${picked.length} selected` : "Select answers"}
-        </button>
-      )}
-      <div className="nav-row">
-        <button className="nav-btn" onClick={goPrev} disabled={qi <= 0}><Ic.back /> Previous</button>
-        <button className="nav-btn fwd" onClick={goNext}>{qi + 1 >= qs.length ? "See score" : "Next"} <Ic.fwd /></button>
+      <div className="nav-row quiz-nav">
+        <button className="nav-arrow" onClick={goPrev} disabled={qi <= 0} aria-label="Previous question"><Ic.back /></button>
+        {isMulti && !submitted && (
+          <button className="quiz-submit" onClick={submitMulti} disabled={!picked.length}>
+            {picked.length ? `Submit · ${picked.length} selected` : "Select answers"}
+          </button>
+        )}
+        <button className="nav-arrow" onClick={goNext} aria-label={qi + 1 >= qs.length ? "See score" : "Next question"}><Ic.fwd /></button>
       </div>
       <div className="kbd-hints">
         <span><span className="kbd">1-{q.opts.length}</span> {isMulti ? "toggle" : "choose"}</span>

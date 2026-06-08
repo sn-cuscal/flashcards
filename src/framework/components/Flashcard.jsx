@@ -81,7 +81,7 @@ function FaceContent({ side, card, cat, styleId, reveal, onReveal }) {
   );
 }
 
-function Flashcard({ card, cat, styleId, flipped, exiting, onFlip, onGrade }) {
+function Flashcard({ card, cat, styleId, flipped, exiting, onFlip, onGrade, canNote, onNoteSwipe, note }) {
   // ---- flip (scaleX squeeze — reliable, no 3D) ----
   const [face, setFace] = React.useState(flipped ? "back" : "front");
   const [sq, setSq] = React.useState(false);
@@ -112,12 +112,16 @@ function Flashcard({ card, cat, styleId, flipped, exiting, onFlip, onGrade }) {
   const [dragging, setDragging] = React.useState(false);
   const start = React.useRef(null);
   const moved = React.useRef(0);
+  // axis is locked once the gesture commits to horizontal (grade) or vertical
+  // (note reveal), so a diagonal drag never does both.
+  const axis = React.useRef(null);
   const THRESH = 95;
 
   function down(e) {
     if (exiting) return;
     start.current = { x: e.clientX, y: e.clientY, t: Date.now() };
     moved.current = 0;
+    axis.current = null;
     setDragging(true);
     e.currentTarget.setPointerCapture?.(e.pointerId);
   }
@@ -125,14 +129,24 @@ function Flashcard({ card, cat, styleId, flipped, exiting, onFlip, onGrade }) {
     if (start.current == null) return;
     const dx = e.clientX - start.current.x, dy = e.clientY - start.current.y;
     moved.current = Math.max(moved.current, Math.abs(dx) + Math.abs(dy));
-    if (Math.abs(dx) > Math.abs(dy) || Math.abs(drag) > 4) setDrag(dx);
+    if (axis.current == null && (Math.abs(dx) > 8 || Math.abs(dy) > 8))
+      axis.current = canNote && Math.abs(dy) > Math.abs(dx) ? "v" : "h";
+    if (axis.current === "h") setDrag(dx);
   }
   function up(e) {
     if (start.current == null) return;
-    const dx = e.clientX - start.current.x;
+    const dx = e.clientX - start.current.x, dy = e.clientY - start.current.y;
     const quick = Date.now() - start.current.t < 280;
+    const a = axis.current;
     start.current = null;
+    axis.current = null;
     setDragging(false);
+    if (a === "v") {
+      setDrag(0);
+      if (dy < -40 || (quick && dy < -25)) onNoteSwipe?.("up");
+      else if (dy > 40 || (quick && dy > 25)) onNoteSwipe?.("down");
+      return;
+    }
     if (Math.abs(dx) > THRESH || (quick && Math.abs(dx) > 55)) { onGrade(dx > 0); setDrag(0); return; }
     if (moved.current < 9) onFlip();
     setDrag(0);
@@ -159,19 +173,29 @@ function Flashcard({ card, cat, styleId, flipped, exiting, onFlip, onGrade }) {
       <div className="swipe-hint l" style={{ opacity: lHint }}>Still learning</div>
       <div className="swipe-hint r" style={{ opacity: rHint }}>Got it</div>
       <div
-        className="fc-drag"
-        style={{ ...wrapStyle, width: "100%", maxWidth: 340, height: 440, touchAction: "pan-y" }}
+        className="fc-hit"
+        style={{ touchAction: "none" }}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}
       >
-        <div
-          className={"fc st-" + styleId}
-          style={{
-            transform: sq ? "scaleX(0.04)" : "none",
-            transition: "transform .155s ease-in-out",
-          }}
-        >
-          <div className="fc-face" key={face} style={{ position: "static", height: "100%" }}>
-            <FaceContent side={face} card={card} cat={cat} styleId={styleId} reveal={reveal} onReveal={(kind) => setReveal((r) => (r === kind ? null : kind))} />
+        {/* the squeeze wraps the card AND its note so the note flips in/out with
+            the card; gating the note on the displayed `face` (not `flipped`)
+            reveals it at the squeeze midpoint rather than instantly on tap. The
+            front reserves the collapsed-note height so flipping never shifts the
+            card. */}
+        <div className="fc-drag" style={{ ...wrapStyle, width: "100%", maxWidth: 340 }}>
+          <div
+            className="fc-squeeze"
+            style={{
+              transform: sq ? "scaleX(0.04)" : "none",
+              transition: "transform .155s ease-in-out",
+            }}
+          >
+            <div className={"fc st-" + styleId} style={{ height: 440 }}>
+              <div className="fc-face" key={face} style={{ position: "static", height: "100%" }}>
+                <FaceContent side={face} card={card} cat={cat} styleId={styleId} reveal={reveal} onReveal={(kind) => setReveal((r) => (r === kind ? null : kind))} />
+              </div>
+            </div>
+            {face === "back" ? note : <div className="note-spacer" aria-hidden="true" />}
           </div>
         </div>
       </div>
