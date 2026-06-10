@@ -47,7 +47,9 @@ elapsedMs}` (no `correctIndex`/`explain`), `answerAck`, `answerCount` (host),
 `podium {top3, you | standings}`, `ended`, `error {code, message, action}`.
 
 On join/rejoin the server sends a state snapshot so a refreshed client lands
-on the correct screen mid-game; `elapsedMs` lets the countdown resume.
+on the correct screen mid-game; `elapsedMs` lets the countdown resume. A
+rejoining host also gets the roster (`lobby` frame) and, mid-question, the
+current `answerCount` back — its screens derive "N of M answered" from them.
 
 ## DynamoDB
 

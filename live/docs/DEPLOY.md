@@ -26,10 +26,11 @@ a per-region account setting shared by every API Gateway API in the account.
 
 ## Frontend wiring
 
-Take the `wss_url` output and replace the placeholder in
-`apps/play/config.js`, then push — the Pages workflow deploys `/play/` with
-the rest of the repo. On localhost the app ignores this and uses the dev
-server (`ws://localhost:8787`); `?ws=wss://…` overrides both.
+`apps/play/config.js` carries the `wss_url` output as the production `wsUrl`
+(already wired for the current deployment — update it if the API is ever
+recreated), then push — the Pages workflow deploys `/play/` with the rest of
+the repo. On localhost the app ignores this and uses the dev server
+(`ws://localhost:8787`); `?ws=wss://…` overrides both.
 
 ## Custom domain (optional, Cloudflare DNS)
 

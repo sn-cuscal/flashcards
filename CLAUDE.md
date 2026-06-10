@@ -91,10 +91,10 @@ Kahoot-style game on the quiz banks. Full docs: `live/README.md` ->
 `docs/claude/260609-kahoot/`.
 
 - Frontend: `apps/play/` (entry; `config.js` holds `wsUrl` — localhost uses
-  the dev server, production needs the `wss_url` Terraform output pasted in;
-  `banks.js` registers question banks) + `src/game/` (views/hooks/styles,
-  aliased `@game`). No `storeKey` — game state is server-side; sessions sit in
-  `sessionStorage`.
+  the dev server, production is wired to the deployed `wss_url` Terraform
+  output; `banks.js` registers question banks) + `src/game/` (views/hooks/
+  styles, aliased `@game`). No `storeKey` — game state is server-side;
+  sessions sit in `sessionStorage`.
 - Shared logic: `live/shared/` (`scoring.mjs`, `draw.mjs`), aliased `@shared`,
   imported by both the frontend and the backend so rules can't drift. Only
   single-answer questions with <=4 options are game-eligible; draws order
@@ -104,7 +104,8 @@ Kahoot-style game on the quiz banks. Full docs: `live/README.md` ->
   dependency-injected (`{store, send, now}`); the Lambda handler (DynamoDB +
   API Gateway) and the local dev server (`live/backend/dev/`, memory store +
   `ws`) wrap the same code. Tests in `live/backend/test/` drive it with a fake
-  clock (`npm run test:live`).
+  clock (`npm run test:live`). The backend is deployed (ap-southeast-2);
+  Lambda code changes ship with another `make -C live deploy`.
 - Infra: `live/infra/` Terraform (API GW WebSocket + Lambda nodejs22.x +
   DynamoDB TTL table), driven by `live/Makefile`. The Lambda zip is built by
   `archive_file` straight from source — no bundler. All resources tagged via
