@@ -151,6 +151,23 @@ test("a dropped player rejoins mid-question with score intact", async () => {
   assert.equal(w.last("P1b", "answerAck").index, 1);
 });
 
+test("a refreshed host rejoins mid-question with roster and answer count", async () => {
+  const w = makeWorld();
+  const { pin, hostToken } = await setupGame(w);
+  const p1Id = w.last("P1", "joined").playerId;
+
+  await w.say("H", { action: "start", pin, hostToken });
+  await w.say("P1", { action: "answer", pin, playerId: p1Id, questionIndex: 0, choiceIndex: 0 });
+
+  w.tick(4_000);
+  await w.say("H2", { action: "rejoinHost", pin, hostToken });
+  assert.deepEqual(w.last("H2", "lobby").players.map((p) => p.nickname).sort(), ["Ada", "Grace"]);
+  const snap = w.last("H2", "question");
+  assert.equal(snap.index, 0);
+  assert.equal(snap.elapsedMs, 4_000);
+  assert.equal(w.last("H2", "answerCount").answered, 1);
+});
+
 test("create rejects malformed question sets", async () => {
   const w = makeWorld();
   await w.say("H", { action: "create", questions: [] });

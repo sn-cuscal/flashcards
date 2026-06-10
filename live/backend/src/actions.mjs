@@ -270,12 +270,21 @@ async function rejoinHost(ctx, connectionId, msg) {
 async function sendSnapshot(ctx, game, player) {
   const connectionId = player ? player.connectionId : game.hostConnectionId;
   const players = await ctx.store.listPlayers(game.pin);
+  // The host screens derive "N of M answered" and the Start gate from the
+  // roster, so a rejoining host needs it back in every state, not just lobby.
+  if (!player && game.state !== "lobby") {
+    await ctx.send(connectionId, { type: "lobby", pin: game.pin, players: roster(players) });
+  }
   if (game.state === "lobby") {
     await ctx.send(connectionId, { type: "lobby", pin: game.pin, players: roster(players) });
   } else if (game.state === "question") {
     const payload = questionPayload(game, ctx.now());
     const answered = player ? !!player.answers[answerKey(game.currentQuestion)] : false;
     await ctx.send(connectionId, { ...payload, answered });
+    if (!player) {
+      const count = players.filter((p) => p.answers[answerKey(game.currentQuestion)]).length;
+      await ctx.send(connectionId, { type: "answerCount", answered: count });
+    }
   } else if (game.state === "reveal") {
     const r = revealFor(game, players);
     await ctx.send(connectionId, {
