@@ -19,6 +19,11 @@ The Lambda zip is built by Terraform (`archive_file`) straight from
 `backend/src/` + `shared/scoring.mjs` — there is no separate bundling step.
 A code change just needs another `make deploy`.
 
+Stage access logging requires the API Gateway account-level CloudWatch Logs
+role (`aws_api_gateway_account` + an `apigateway.amazonaws.com` role with
+`AmazonAPIGatewayPushToCloudWatchLogs`). The stack manages it, but note it is
+a per-region account setting shared by every API Gateway API in the account.
+
 ## Frontend wiring
 
 Take the `wss_url` output and replace the placeholder in

@@ -33,6 +33,12 @@ resource "aws_cloudwatch_log_group" "apigw_access" {
   retention_in_days = var.log_retention_days
 }
 
+resource "aws_api_gateway_account" "this" {
+  cloudwatch_role_arn = aws_iam_role.apigw_logs.arn
+
+  depends_on = [aws_iam_role_policy_attachment.apigw_logs]
+}
+
 resource "aws_apigatewayv2_stage" "prod" {
   api_id      = aws_apigatewayv2_api.ws.id
   name        = local.stage_name
@@ -53,6 +59,8 @@ resource "aws_apigatewayv2_stage" "prod" {
       errorMessage = "$context.error.message"
     })
   }
+
+  depends_on = [aws_api_gateway_account.this]
 }
 
 resource "aws_lambda_permission" "apigw" {
