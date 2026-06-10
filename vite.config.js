@@ -32,7 +32,11 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   resolve: {
-    alias: { '@framework': resolve(rootDir, 'src/framework') },
+    alias: {
+      '@framework': resolve(rootDir, 'src/framework'),
+      '@game': resolve(rootDir, 'src/game'),
+      '@shared': resolve(rootDir, 'live/shared'),
+    },
   },
   build: {
     outDir: resolve(rootDir, 'dist'),

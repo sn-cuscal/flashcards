@@ -4,3 +4,7 @@ dist
 *.local
 .playwright-mcp/
 .venv*
+.terraform/
+*.tfstate
+*.tfstate.backup
+live/infra/.build/

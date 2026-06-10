@@ -9,6 +9,10 @@ base (`src/framework`) renders everything; each app (`apps/<...>`) supplies only
 its config and datasets. Apps build to static sites for GitHub Pages. Stack:
 Vite + React 18, ES modules (no JSX runtime globals, no CDN scripts).
 
+There is also a Kahoot-style live multiplayer quiz built on the same question
+banks: the `/play/` app (`apps/play/` + `src/game/`) plus a serverless
+WebSocket backend under `live/` — see the "Live multiplayer game" section.
+
 ## Commands
 
 ```
@@ -16,18 +20,26 @@ npm install            # sandbox must be disabled here (EPERM on ~/.npm/_cacache
 npm run dev            # dev server; open http://localhost:5173/aws/AIF-C01/
 npm run build          # static output to dist/
 npm run preview        # serve dist/ to check the production build
+npm run dev:ws         # local game WebSocket server on :8787 (= make -C live dev)
+npm run test:live      # game backend unit tests (node --test)
+make -C live tftest    # terraform tests (mocked providers, no AWS access)
+make -C live deploy    # terraform apply for the game backend (user-run)
 ```
 
-There is no landing page — navigate directly to an app path (`/aws/AIF-C01/`).
+There is no landing page — navigate directly to an app path (`/aws/AIF-C01/`,
+`/play/`).
 
 ## Architecture
 
-Two layers, kept strictly separate:
+Layers, kept strictly separate:
 
-- `src/framework/` — shared code, never app-specific. Anything exam-specific
-  that lands here is a bug; lift it into the app's `config.js` instead.
+- `src/framework/` — shared study-app code, never app-specific. Anything
+  exam-specific that lands here is a bug; lift it into the app's `config.js`
+  instead.
 - `apps/<vendor>/<exam>/` — one app per directory. The directory path is the
   URL path (`apps/aws/AIF-C01/` -> `/aws/AIF-C01/`).
+- `src/game/` + `live/` — the live multiplayer game (its own section below);
+  game code never leaks into `src/framework/`, though it may import from it.
 
 Data flow: an app's `main.jsx` calls `createApp({ config, data, quiz })`, which
 mounts `App` (wrapped in `DesktopShell`) into the page `#root`. `App` takes
@@ -71,6 +83,40 @@ Create `apps/<vendor>/<exam>/` with `config.js`, `cards.js`, `quiz.js`,
 `<title>` and the three data/config files change — `main.jsx`, `index.html` and
 `favicon.svg` copy as-is). The build auto-discovers `apps/**/index.html` — no
 config edits. Set a unique `storeKey`.
+
+## Live multiplayer game
+
+Kahoot-style game on the quiz banks. Full docs: `live/README.md` ->
+`live/docs/{GAME,ARCHITECTURE,DEPLOY}.md`. Plan history in
+`docs/claude/260609-kahoot/`.
+
+- Frontend: `apps/play/` (entry; `config.js` holds `wsUrl` — localhost uses
+  the dev server, production needs the `wss_url` Terraform output pasted in;
+  `banks.js` registers question banks) + `src/game/` (views/hooks/styles,
+  aliased `@game`). No `storeKey` — game state is server-side; sessions sit in
+  `sessionStorage`.
+- Shared logic: `live/shared/` (`scoring.mjs`, `draw.mjs`), aliased `@shared`,
+  imported by both the frontend and the backend so rules can't drift. Only
+  single-answer questions with <=4 options are game-eligible; draws order
+  easy -> intermediate -> advanced with rising points (800/1000/1200) and
+  time limits (15/20/25s).
+- Backend: `live/backend/src/` — `engine.mjs`/`actions.mjs` are pure +
+  dependency-injected (`{store, send, now}`); the Lambda handler (DynamoDB +
+  API Gateway) and the local dev server (`live/backend/dev/`, memory store +
+  `ws`) wrap the same code. Tests in `live/backend/test/` drive it with a fake
+  clock (`npm run test:live`).
+- Infra: `live/infra/` Terraform (API GW WebSocket + Lambda nodejs22.x +
+  DynamoDB TTL table), driven by `live/Makefile`. The Lambda zip is built by
+  `archive_file` straight from source — no bundler. All resources tagged via
+  provider `default_tags`. Custom domain is two-phase (cert -> Cloudflare
+  validation records -> domain + CNAME outputs); see `live/docs/DEPLOY.md`.
+  Native tests in `live/infra/tests/` use mock providers (IAM uses
+  `jsonencode`, not `aws_iam_policy_document` — the data source breaks under
+  mocks). `terraform init/validate/test` need the sandbox disabled.
+- Verifying game changes: start `npm run dev:ws` + `npm run dev`, open
+  `/play/` in a host tab + player tabs. Playwright MCP roundtrips are slower
+  than the 15s easy-question countdown, so script whole rounds inside a single
+  `browser_run_code_unsafe` call when automating.
 
 ## Build / deploy
 
