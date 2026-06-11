@@ -51,6 +51,8 @@ lobby → question(i) → reveal(i) → … → podium
 
 - Players join in the lobby only; rejoining with a known `playerId` works in
   any state and keeps the score (sessionStorage survives a refresh).
+- The host lobby shows a QR code for `<site>/play/?pin=<pin>`; scanning it on
+  a phone opens the join form with the PIN pre-filled.
 - A question reveals when every player has answered, or when the host's
   countdown ends (the host client sends `reveal`; the transition is
   conditional so the two paths can't double-fire).

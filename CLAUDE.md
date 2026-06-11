@@ -86,15 +86,18 @@ config edits. Set a unique `storeKey`.
 
 ## Live multiplayer game
 
-Kahoot-style game on the quiz banks. Full docs: `live/README.md` ->
-`live/docs/{GAME,ARCHITECTURE,DEPLOY}.md`. Plan history in
+Kahoot-style game on the quiz banks, branded "Trivia" in the UI. Full docs:
+`live/README.md` -> `live/docs/{GAME,ARCHITECTURE,DEPLOY}.md`. Plan history in
 `docs/claude/260609-kahoot/`.
 
 - Frontend: `apps/play/` (entry; `config.js` holds `wsUrl` — localhost uses
   the dev server, production is wired to the deployed `wss_url` Terraform
   output; `banks.js` registers question banks) + `src/game/` (views/hooks/
   styles, aliased `@game`). No `storeKey` — game state is server-side;
-  sessions sit in `sessionStorage`.
+  sessions sit in `sessionStorage`. The look follows `ref/Kahoot`'s playful
+  theme (purple stage, yellow brand, Fredoka display font); the host lobby
+  shows a QR (`qrcode.react`) for `/play/?pin=<pin>`, which lands players on
+  the join form with the PIN pre-filled.
 - Shared logic: `live/shared/` (`scoring.mjs`, `draw.mjs`), aliased `@shared`,
   imported by both the frontend and the backend so rules can't drift. Only
   single-answer questions with <=4 options are game-eligible; draws order

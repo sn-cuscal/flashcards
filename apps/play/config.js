@@ -8,6 +8,6 @@ const params = new URLSearchParams(location.search);
 const isLocal = ["localhost", "127.0.0.1"].includes(location.hostname);
 
 export default {
-  documentTitle: "Live Quiz",
+  documentTitle: "Trivia",
   wsUrl: params.get("ws") || (isLocal ? "ws://localhost:8787" : "wss://s6hgnqqz4c.execute-api.ap-southeast-2.amazonaws.com/prod"),
 };

@@ -1,9 +1,10 @@
 # Live multiplayer quiz
 
-Kahoot-style multiplayer game built on the flashcard apps' quiz banks. A host
-opens a lobby on a shared screen, players join with a 6-digit PIN on their own
-devices, questions run on a countdown with time-weighted scoring, and the draw
-gets harder as the game progresses (easy → intermediate → advanced).
+Kahoot-style multiplayer game ("Trivia" in the UI) built on the flashcard
+apps' quiz banks. A host opens a lobby on a shared screen, players join with a
+6-digit PIN or by scanning the lobby QR code on their phone, questions run on
+a countdown with time-weighted scoring, and the draw gets harder as the game
+progresses (easy → intermediate → advanced).
 
 ## Layout
 
