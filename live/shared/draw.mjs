@@ -1,9 +1,10 @@
 /* Builds a game's question list from a quiz bank (the host does this client
    side and sends the result with the create request, keeping the backend
    bank-agnostic). Only questions that fit the four colour/shape buttons are
-   eligible; the draw is ordered easy -> intermediate -> advanced. */
+   eligible; the draw is ordered easy -> intermediate -> advanced, with a few
+   randomly drawn expert finals appended when the bank provides them. */
 
-import { TIERS, TIER_ORDER } from "./scoring.mjs";
+import { TIERS, TIER_ORDER, EXPERT_FINAL_COUNT } from "./scoring.mjs";
 
 export const MAX_OPTIONS = 4;
 
@@ -25,7 +26,7 @@ export function eligibleQuestions(quiz, categoryIds = null) {
     for (const q of cat.questions) {
       if (typeof q.correct !== "string") continue;
       if (q.options.length < 2 || q.options.length > MAX_OPTIONS) continue;
-      if (!TIERS[q.diff]) continue;
+      if (!TIER_ORDER.includes(q.diff)) continue;
       out.push({ q: q.q, options: q.options, correct: q.correct, explain: q.explain, diff: q.diff, cat: cat.id });
     }
   }
@@ -54,7 +55,21 @@ function toGameQuestion(item, rng) {
   };
 }
 
-export function drawQuestions(quiz, { count = 15, categoryIds = null, rng = Math.random } = {}) {
+/* Expert questions live outside the quiz banks (game-only, never shown as
+   flashcards); a random handful closes out the game after the ramp. */
+export function eligibleExpert(expert) {
+  return (expert ?? []).filter((q) =>
+    typeof q.correct === "string" && q.options.length >= 2 && q.options.length <= MAX_OPTIONS,
+  );
+}
+
+export function drawExpertFinals(expert, rng, count = EXPERT_FINAL_COUNT) {
+  return shuffle(eligibleExpert(expert), rng)
+    .slice(0, count)
+    .map((item) => toGameQuestion({ ...item, diff: "expert" }, rng));
+}
+
+export function drawQuestions(quiz, { count = 15, categoryIds = null, rng = Math.random, expert = null } = {}) {
   const pool = eligibleQuestions(quiz, categoryIds);
   const byTier = Object.fromEntries(TIER_ORDER.map((t) => [t, shuffle(pool.filter((q) => q.diff === t), rng)]));
   const total = Math.min(count, pool.length);
@@ -77,5 +92,6 @@ export function drawQuestions(quiz, { count = 15, categoryIds = null, rng = Math
     }
   }
 
-  return TIER_ORDER.flatMap((t) => picks[t]).map((item) => toGameQuestion(item, rng));
+  const ramp = TIER_ORDER.flatMap((t) => picks[t]).map((item) => toGameQuestion(item, rng));
+  return [...ramp, ...drawExpertFinals(expert, rng)];
 }

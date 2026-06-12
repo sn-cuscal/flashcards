@@ -2,13 +2,18 @@
    frontend (via the @shared vite alias) so the two can never drift. */
 
 // Later questions are worth more and allow more thinking time, reinforcing
-// the easy -> advanced ramp within a game.
+// the easy -> advanced ramp within a game. Expert is game-only: its questions
+// never appear in the flashcard apps and are appended as the final stretch.
 export const TIERS = {
   easy:         { basePoints: 800,  timeLimitSeconds: 15 },
   intermediate: { basePoints: 1000, timeLimitSeconds: 20 },
   advanced:     { basePoints: 1200, timeLimitSeconds: 25 },
+  expert:       { basePoints: 1500, timeLimitSeconds: 30 },
 };
+// The ramp drawn from a quiz bank; expert finals are drawn from a separate
+// game-only pool and appended after it.
 export const TIER_ORDER = ["easy", "intermediate", "advanced"];
+export const EXPERT_FINAL_COUNT = 3;
 
 export const STREAK_BONUS_POINTS = 100;     // per consecutive correct answer, from the 2nd
 export const STREAK_BONUS_CAP_POINTS = 500; // per-question bonus ceiling

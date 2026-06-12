@@ -18,6 +18,13 @@ short after category filtering backfills from the nearest tier, easier first.
 Each question's options are shuffled at draw time (banks usually list the
 correct option first) and `correct` becomes `correctIndex`.
 
+If the bank provides an expert pool (`expert` in `apps/play/banks.js`, e.g.
+`apps/aws/AIF-C01/expert.js`), the draw appends `EXPERT_FINAL_COUNT` (3)
+randomly selected expert questions after the ramp, so the game always ends on
+them. Expert questions are game-only: they never appear as flashcards or in
+the study quiz, and they ignore the host's category filter. The chosen count
+covers the ramp only — a 10-question selection plays 13 with the finals.
+
 ## Tiers
 
 | Tier         | Base points | Time limit |
@@ -25,6 +32,7 @@ correct option first) and `correct` becomes `correctIndex`.
 | easy         | 800         | 15 s       |
 | intermediate | 1000        | 20 s       |
 | advanced     | 1200        | 25 s       |
+| expert       | 1500        | 30 s       |
 
 Defined once in `live/shared/scoring.mjs` and re-derived server-side at game
 creation, so a tampered create payload can't inflate scoring.

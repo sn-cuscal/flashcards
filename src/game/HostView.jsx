@@ -7,8 +7,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Ring } from "@framework/components/Ring.jsx";
 import { Ic } from "@framework/components/icons.jsx";
-import { drawQuestions, eligibleQuestions } from "@shared/draw.mjs";
-import { TIER_ORDER } from "@shared/scoring.mjs";
+import { drawQuestions, eligibleQuestions, eligibleExpert } from "@shared/draw.mjs";
+import { TIER_ORDER, EXPERT_FINAL_COUNT } from "@shared/scoring.mjs";
 import { Shape, SHAPES, Avatar } from "./shapes.jsx";
 import { useGameSocket, useCountdown, useSession } from "./hooks.js";
 
@@ -33,6 +33,7 @@ export function HostView({ config, banks, onExit }) {
 
   const bank = banks.find((b) => b.id === bankId);
   const pool = useMemo(() => eligibleQuestions(bank.quiz, catIds), [bank, catIds]);
+  const expertPool = useMemo(() => eligibleExpert(bank.expert), [bank]);
 
   const { send, close } = useGameSocket(config.wsUrl, {
     makeRejoin: () => {
@@ -105,7 +106,7 @@ export function HostView({ config, banks, onExit }) {
   }
 
   function createGame() {
-    const questions = drawQuestions(bank.quiz, { count, categoryIds: catIds });
+    const questions = drawQuestions(bank.quiz, { count, categoryIds: catIds, expert: bank.expert });
     send({ action: "create", questions, settings: { bankId } });
   }
 
@@ -195,6 +196,7 @@ export function HostView({ config, banks, onExit }) {
               </div>
               <div className="pool-note">
                 {pool.length} questions available ({poolByTier}). Games run easy first, then harder — later questions are worth more.
+                {expertPool.length >= EXPERT_FINAL_COUNT && ` The game ends with ${EXPERT_FINAL_COUNT} expert questions.`}
               </div>
             </div>
           )}

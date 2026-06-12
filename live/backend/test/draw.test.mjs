@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { eligibleQuestions, tierCounts, drawQuestions } from "../../shared/draw.mjs";
+import { eligibleQuestions, eligibleExpert, tierCounts, drawQuestions, drawExpertFinals } from "../../shared/draw.mjs";
+import { EXPERT_FINAL_COUNT } from "../../shared/scoring.mjs";
 
 // deterministic rng so shuffles are stable across runs
 function lcg(seed = 42) {
@@ -93,4 +94,50 @@ test("count larger than the pool returns the whole pool", () => {
   const drawn = drawQuestions(bank({ easy: 1, intermediate: 1, advanced: 1 }), { count: 20, rng: lcg() });
   assert.equal(drawn.length, 3);
   assert.deepEqual(drawn.map((i) => i.diff), ["easy", "intermediate", "advanced"]);
+});
+
+const expertPool = (n) => Array.from({ length: n }, (_, i) => {
+  const { diff, ...item } = q(`expert${i}`);
+  return item;
+});
+
+test("expert questions in a bank are not eligible for the ramp", () => {
+  const quiz = bank({ easy: 2, intermediate: 0, advanced: 0 });
+  quiz.categories[0].questions.push(q("sneaky", "expert"));
+  assert.equal(eligibleQuestions(quiz).length, 2);
+});
+
+test("expert finals are appended after the ramp with expert tier parameters", () => {
+  const drawn = drawQuestions(bank(), { count: 9, rng: lcg(), expert: expertPool(8) });
+  assert.equal(drawn.length, 9 + EXPERT_FINAL_COUNT);
+  const finals = drawn.slice(9);
+  assert.ok(drawn.slice(0, 9).every((i) => i.diff !== "expert"));
+  for (const item of finals) {
+    assert.equal(item.diff, "expert");
+    assert.ok(item.basePoints > 1200);
+    assert.ok(item.timeLimitSeconds > 25);
+    assert.match(item.options[item.correctIndex], /-correct$/);
+  }
+});
+
+test("expert finals are a random selection without repeats", () => {
+  const drawn = drawQuestions(bank(), { count: 9, rng: lcg(7), expert: expertPool(8) });
+  const finals = drawn.slice(9).map((i) => i.q);
+  assert.equal(new Set(finals).size, EXPERT_FINAL_COUNT);
+  const other = drawQuestions(bank(), { count: 9, rng: lcg(1234567), expert: expertPool(8) }).slice(9).map((i) => i.q);
+  assert.notDeepEqual(other, finals);
+});
+
+test("no expert pool means no expert finals", () => {
+  assert.equal(drawQuestions(bank(), { count: 9, rng: lcg() }).length, 9);
+  assert.equal(drawQuestions(bank(), { count: 9, rng: lcg(), expert: [] }).length, 9);
+});
+
+test("ineligible expert items are filtered before the final draw", () => {
+  const pool = expertPool(2);
+  pool.push({ q: "multi?", options: ["a", "b", "c"], correct: ["a", "b"], explain: "" });
+  pool.push({ q: "five?", options: ["a", "b", "c", "d", "e"], correct: "a", explain: "" });
+  assert.equal(eligibleExpert(pool).length, 2);
+  const finals = drawExpertFinals(pool, lcg());
+  assert.equal(finals.length, 2);
 });

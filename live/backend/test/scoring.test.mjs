@@ -42,5 +42,7 @@ test("time used is clamped to the limit in both directions", () => {
 test("tiers ramp points and thinking time upward", () => {
   assert.ok(TIERS.easy.basePoints < TIERS.intermediate.basePoints);
   assert.ok(TIERS.intermediate.basePoints < TIERS.advanced.basePoints);
+  assert.ok(TIERS.advanced.basePoints < TIERS.expert.basePoints);
   assert.ok(TIERS.easy.timeLimitSeconds < TIERS.advanced.timeLimitSeconds);
+  assert.ok(TIERS.advanced.timeLimitSeconds < TIERS.expert.timeLimitSeconds);
 });
