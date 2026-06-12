@@ -11,9 +11,8 @@ export const TIERS = {
   expert:       { basePoints: 1500, timeLimitSeconds: 30 },
 };
 // The ramp drawn from a quiz bank; expert finals are drawn from a separate
-// game-only pool and appended after it.
+// game-only pool and close out the game.
 export const TIER_ORDER = ["easy", "intermediate", "advanced"];
-export const EXPERT_FINAL_COUNT = 3;
 
 export const STREAK_BONUS_POINTS = 100;     // per consecutive correct answer, from the 2nd
 export const STREAK_BONUS_CAP_POINTS = 500; // per-question bonus ceiling

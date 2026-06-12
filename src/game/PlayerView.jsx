@@ -1,6 +1,6 @@
 /* PlayerView.jsx — a player's phone: join with PIN + nickname (the lobby QR
    pre-fills the PIN via ?pin=), tap a colour/shape to answer, then full-bleed
-   state screens: waiting (brand yellow), locked (your tile colour), result
+   state screens: waiting (brand yellow), locked (band purple), result
    (green/red) and final rank. */
 
 import React, { useEffect, useState } from "react";
@@ -101,7 +101,10 @@ export function PlayerView({ config, onExit }) {
   let cls = "", bg = null;
   if (stage === "join" || stage === "question") cls = "lite";
   else if (stage === "lobby") { bg = "var(--brand)"; cls = "tone-dark"; }
-  else if (stage === "locked") bg = choice != null ? SHAPES[choice].color : "var(--band)";
+  // Locked stays neutral: when the answer triggers the all-answered reveal,
+  // this screen lives for one round-trip, and a tile-colour background would
+  // just flash before the green/red result.
+  else if (stage === "locked") bg = "var(--band)";
   else if (stage === "reveal") bg = reveal?.you?.correct ? "var(--good)" : "var(--bad)";
   else if (stage === "podium") { cls = finalTop3 ? "tone-dark" : "lite"; bg = finalTop3 ? "var(--brand)" : null; }
 

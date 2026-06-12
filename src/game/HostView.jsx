@@ -7,8 +7,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Ring } from "@framework/components/Ring.jsx";
 import { Ic } from "@framework/components/icons.jsx";
-import { drawQuestions, eligibleQuestions, eligibleExpert } from "@shared/draw.mjs";
-import { TIER_ORDER, EXPERT_FINAL_COUNT } from "@shared/scoring.mjs";
+import { drawQuestions, eligibleQuestions, eligibleExpert, expertCount } from "@shared/draw.mjs";
+import { TIER_ORDER } from "@shared/scoring.mjs";
 import { Shape, SHAPES, Avatar } from "./shapes.jsx";
 import { useGameSocket, useCountdown, useSession } from "./hooks.js";
 
@@ -124,6 +124,8 @@ export function HostView({ config, banks, onExit }) {
   }
 
   const poolByTier = TIER_ORDER.map((t) => `${pool.filter((q) => q.diff === t).length} ${t}`).join(" · ");
+  const finalsCount = Math.min(expertCount(count), expertPool.length);
+  const playable = Math.min(count - finalsCount, pool.length) + finalsCount;
   const secs = Math.ceil((remainingMs ?? 0) / 1000);
   const low = stage === "question" && secs <= 5;
   const isLast = reveal && reveal.index + 1 === reveal.total;
@@ -196,7 +198,7 @@ export function HostView({ config, banks, onExit }) {
               </div>
               <div className="pool-note">
                 {pool.length} questions available ({poolByTier}). Games run easy first, then harder — later questions are worth more.
-                {expertPool.length >= EXPERT_FINAL_COUNT && ` The game ends with ${EXPERT_FINAL_COUNT} expert questions.`}
+                {finalsCount > 0 && ` The last ${finalsCount} are expert questions.`}
               </div>
             </div>
           )}
@@ -349,7 +351,7 @@ export function HostView({ config, banks, onExit }) {
             <>
               <button className="btn" onClick={onExit}><Ic.back /> Back</button>
               <button className="btn btn-primary" disabled={pool.length === 0} onClick={createGame}>
-                Open lobby{count > pool.length ? ` (${pool.length} questions)` : ""} ▸
+                Open lobby{playable < count ? ` (${playable} questions)` : ""} ▸
               </button>
             </>
           )}

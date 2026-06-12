@@ -19,11 +19,13 @@ Each question's options are shuffled at draw time (banks usually list the
 correct option first) and `correct` becomes `correctIndex`.
 
 If the bank provides an expert pool (`expert` in `apps/play/banks.js`, e.g.
-`apps/aws/AIF-C01/expert.js`), the draw appends `EXPERT_FINAL_COUNT` (3)
-randomly selected expert questions after the ramp, so the game always ends on
-them. Expert questions are game-only: they never appear as flashcards or in
-the study quiz, and they ignore the host's category filter. The chosen count
-covers the ramp only — a 10-question selection plays 13 with the finals.
+`apps/aws/AIF-C01/expert.js`), one in five of the requested count
+(`expertCount`: 10 → 2, 15 → 3, 20 → 4) is reserved for randomly selected
+expert questions played last, inside the chosen total — a 10-question
+selection still plays 10 (8 ramp + 2 expert). A short expert pool hands its
+unused slots back to the ramp. Expert questions are game-only: they never
+appear as flashcards or in the study quiz, and they ignore the host's
+category filter.
 
 ## Tiers
 

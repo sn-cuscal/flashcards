@@ -103,9 +103,10 @@ Kahoot-style game on the quiz banks, branded "Trivia" in the UI. Full docs:
   single-answer questions with <=4 options are game-eligible; draws order
   easy -> intermediate -> advanced with rising points (800/1000/1200) and
   time limits (15/20/25s). A bank may also carry a game-only `expert` pool
-  (`apps/aws/AIF-C01/expert.js` — never shown as flashcards/study quiz): the
-  draw appends 3 randomly selected expert finals (1500 pts, 30s) after the
-  ramp.
+  (`apps/aws/AIF-C01/expert.js` — never shown as flashcards/study quiz): one
+  in five of the requested count (10/15/20 -> 2/3/4) is drawn from it as
+  randomly selected expert finals (1500 pts, 30s), played last within the
+  chosen total.
 - Backend: `live/backend/src/` — `engine.mjs`/`actions.mjs` are pure +
   dependency-injected (`{store, send, now}`); the Lambda handler (DynamoDB +
   API Gateway) and the local dev server (`live/backend/dev/`, memory store +

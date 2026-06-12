@@ -4,7 +4,7 @@
    eligible; the draw is ordered easy -> intermediate -> advanced, with a few
    randomly drawn expert finals appended when the bank provides them. */
 
-import { TIERS, TIER_ORDER, EXPERT_FINAL_COUNT } from "./scoring.mjs";
+import { TIERS, TIER_ORDER } from "./scoring.mjs";
 
 export const MAX_OPTIONS = 4;
 
@@ -56,23 +56,31 @@ function toGameQuestion(item, rng) {
 }
 
 /* Expert questions live outside the quiz banks (game-only, never shown as
-   flashcards); a random handful closes out the game after the ramp. */
+   flashcards); a random handful closes out the game. One in five of the
+   requested count is an expert final (10 -> 2, 15 -> 3, 20 -> 4), taken out
+   of the total rather than added on top. */
+export function expertCount(total) {
+  return Math.floor(total / 5);
+}
+
 export function eligibleExpert(expert) {
   return (expert ?? []).filter((q) =>
     typeof q.correct === "string" && q.options.length >= 2 && q.options.length <= MAX_OPTIONS,
   );
 }
 
-export function drawExpertFinals(expert, rng, count = EXPERT_FINAL_COUNT) {
+export function drawExpertFinals(expert, rng, count) {
   return shuffle(eligibleExpert(expert), rng)
     .slice(0, count)
     .map((item) => toGameQuestion({ ...item, diff: "expert" }, rng));
 }
 
 export function drawQuestions(quiz, { count = 15, categoryIds = null, rng = Math.random, expert = null } = {}) {
+  const finals = drawExpertFinals(expert, rng, expertCount(count));
   const pool = eligibleQuestions(quiz, categoryIds);
   const byTier = Object.fromEntries(TIER_ORDER.map((t) => [t, shuffle(pool.filter((q) => q.diff === t), rng)]));
-  const total = Math.min(count, pool.length);
+  // A short expert pool hands its unused slots back to the ramp.
+  const total = Math.min(count - finals.length, pool.length);
   const want = tierCounts(total);
 
   const picks = Object.fromEntries(TIER_ORDER.map((t) => [t, byTier[t].splice(0, want[t])]));
@@ -93,5 +101,5 @@ export function drawQuestions(quiz, { count = 15, categoryIds = null, rng = Math
   }
 
   const ramp = TIER_ORDER.flatMap((t) => picks[t]).map((item) => toGameQuestion(item, rng));
-  return [...ramp, ...drawExpertFinals(expert, rng)];
+  return [...ramp, ...finals];
 }
